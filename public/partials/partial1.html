@@ -1,1 +1,7 @@
-<p>This is the partial for view 1.</p>
+<div id="urlInput">
+    <input type="text" id="originalUrlTextbox" name="originalUrlTextbox" ng-model="originalUrl"/>
+    <button name="submitButton" id="submitButton" ng-click="submitButtonWasTapped()">Submit</button>
+</div>
+<div id="shortUrlOutput">
+    <p>Short url: {{shortUrl}}</p>
+</div>

@@ -3,9 +3,8 @@
 /* Directives */
 
 
-angular.module('myApp.directives', []).
-  directive('appVersion', ['version', function(version) {
-    return function(scope, elm, attrs) {
-      elm.text(version);
-    };
-  }]);
+var pigion = angular.module('pigion.directives', []);
+
+pigion.directive('version', [function() {
+    return 0;
+}]);
