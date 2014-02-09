@@ -30,7 +30,7 @@ class Destination {
     }
 
     def create(originalUrl: String) {
-      val shortUrlHash: String = {}
+      val shortUrlHash: String = dehydrate(getNextId())
       DB.withConnection { implicit c =>
         SQL("INSERT INTO description (originalUrl, shortUrlHash) values ({originalUrl}, {shortUrlHash})").on(
           'originalUrl -> originalUrl,
@@ -47,9 +47,9 @@ class Destination {
       }.as(scalar[Long].single) + 1
     }
 
-    // Take a url hash and figure out what it's url is
+    // Take a url hash and figure out what it's id in the database is
     def saturate(key: String): Int = {
-      key.foldLeft(0)((r,c) => r + math.pow(ALPHABET.indexOf(c), key.indexOf(c)).toInt)
+      key.foldLeft(0)((r,c) => r + ALPHABET.indexOf(c) * math.pow(ALPHABET.size, key.size - key.indexOf(c) - 1).toInt)
     }
 
     // Given the next id in the sequence for this table,
