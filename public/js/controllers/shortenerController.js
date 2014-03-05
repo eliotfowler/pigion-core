@@ -2,13 +2,16 @@
 
 var pigion = angular.module('pigion.controllers', []);
 
-pigion.controller('ShortenerController', ['$scope', 'shortenerService', function($scope, shortenerService) {
+pigion.controller('ShortenerController', ['$scope', 'shortenerService', '$http', function($scope, shortenerService, $http) {
     $scope.submitButtonWasTapped = function submitButtonWasTapped() {
       if(validateUrl($scope.originalUrl)) {
-        console.log("the url is valid");
-        shortenerService.save($scope.originalUrl, function(data) {
-           console.log("it was a success, data is", data);
-        });
+          $http({
+              method: 'POST',
+              url: '/url/shorten',
+              data: JSON.stringify({"originalUrl": $scope.originalUrl})
+          }).success(function(data) {
+              $scope.shortUrl = data.shortUrl;
+          });
       }
     };
 

@@ -9,4 +9,6 @@ object Application extends Controller {
     Ok(views.html.index())
   }
 
+  def test= TODO
+
 }
