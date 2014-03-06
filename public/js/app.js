@@ -8,7 +8,8 @@ angular.module('pigion', [
   'pigion.services',
   'pigion.directives',
   'pigion.controllers',
-  'ngResource'
+  'ngResource',
+  'flow'
 ]).
 config(['$routeProvider', function($routeProvider) {
   $routeProvider.when('/view1', {templateUrl: '/assets/partials/partial1.html', controller: 'ShortenerController'});
