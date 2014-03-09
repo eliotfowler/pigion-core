@@ -1,8 +1,8 @@
 package controllers
 
 import play.api.mvc.{Action, Controller}
-import fly.play.s3.{BucketFilePartUploadTicket, BucketFilePart, BucketFile, S3}
-import models.FlowData
+import fly.play.s3._
+import models.{Destination, FlowData}
 import play.api.mvc.BodyParsers.parse.Multipart.PartHandler
 import play.api.mvc.BodyParsers.parse.Multipart.handleFilePart
 import play.api.mvc.BodyParsers.parse.Multipart.FileInfo
@@ -19,12 +19,18 @@ import scala.concurrent.Await
 import scala.concurrent.Awaitable
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
+import play.api.mvc.BodyParsers.parse.Multipart.FileInfo
+import fly.play.s3.BucketFilePartUploadTicket
+import fly.play.s3.BucketFilePart
+import play.api.mvc.MultipartFormData.FilePart
+import fly.play.s3.BucketFile
 
 object Files extends Controller {
 
   var partUploadTickets: Seq[BucketFilePartUploadTicket] = Seq()
 
   def upload = Action(multipartFormDataAsBytes) { request =>
+    System.out.println("here")
     // Turns Map(String, Seq[String]) into Map(String, String)
     val body = request.body.dataParts.map { case (k,Seq(v)) => (k,v) }
 
@@ -53,16 +59,17 @@ object Files extends Controller {
         // Upload the data
         val filePart = BucketFilePart(flowData.flowChunkNumber.toInt, bytes)
         val partUploadTicket = await(bucket.uploadPart(uploadTicket, filePart))
-//        partUploadTickets :+ partUploadTicket
         partUploadTickets = Seq(partUploadTicket)
       }
     }
 
-    val result = await(bucket completeMultipartUpload (uploadTicket, partUploadTickets))
+    val uploadResult = await(bucket completeMultipartUpload (uploadTicket, partUploadTickets))
 
-    val file = await(bucket get fileName)
+    val url = bucket.url(flowData.flowIdentifier)
 
-    Ok("")
+    Destination.create(url)
+
+    Ok(Destination.create(url))
   }
 
   def sendStartRequest = TODO
@@ -85,13 +92,10 @@ object Files extends Controller {
 
   def multipartFormDataAsBytes:play.api.mvc.BodyParser[MultipartFormData[Array[Byte]]] = multipartFormData(handleFilePartAsByteArray)
 
-  def fileUploader = Action(multipartFormDataAsBytes) { request =>
-    request.body.files foreach {
-      case FilePart(key, filename, contentType, bytes) => // do something
-    }
-    Ok("done")
-  }
+  def await[T](a: Awaitable[T]): T = Await.result(a, Duration.Inf)
 
-  def await[T](a: Awaitable[T]): T =
-    Await.result(a, Duration.Inf)
+  def notifyOfUpload = Action { implicit request =>
+
+    Ok("")
+  }
 }
