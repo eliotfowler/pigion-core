@@ -72,7 +72,7 @@ object Files extends Controller {
       Destination.create(url)
       Ok(Destination.create(url))
     }
-    Ok("")
+    Ok("uploading")
    }
 
   def sendStartRequest = TODO
