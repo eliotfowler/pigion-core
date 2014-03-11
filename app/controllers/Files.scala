@@ -24,6 +24,7 @@ import fly.play.s3.BucketFilePartUploadTicket
 import fly.play.s3.BucketFilePart
 import play.api.mvc.MultipartFormData.FilePart
 import fly.play.s3.BucketFile
+import java.net.URLEncoder
 
 object Files extends Controller {
 
@@ -47,9 +48,9 @@ object Files extends Controller {
     val bucket = S3("pigion")
 
     // Now we need to figure out if this is the beginning of an upload, an in progress upload, or the end of an upload
-    val fileName = flowData.flowIdentifier
-    val fileContentType = MimeTypes.forFileName(flowData.flowFileName).get
-    val bucketFile = BucketFile(fileName, fileContentType)
+    val fileName = flowData.flowFileName
+    val fileContentType = MimeTypes.forFileName(flowData.flowFileName).getOrElse(".txt")
+    val bucketFile = BucketFile(URLEncoder.encode(fileName, "UTF-8"), fileContentType)
 
     val uploadTicket = await(bucket.initiateMultipartUpload(bucketFile))
 
@@ -65,12 +66,14 @@ object Files extends Controller {
 
     val uploadResult = await(bucket completeMultipartUpload (uploadTicket, partUploadTickets))
 
-    val url = bucket.url(flowData.flowIdentifier)
-
-    Destination.create(url)
-
-    Ok(Destination.create(url))
-  }
+    // We only want to create a URL from the last one
+    if(flowData.flowChunkNumber == flowData.flowTotalChunks) {
+      val url = bucket.url(URLEncoder.encode(flowData.flowFileName, "UTF-8"))
+      Destination.create(url)
+      Ok(Destination.create(url))
+    }
+    Ok("")
+   }
 
   def sendStartRequest = TODO
 
