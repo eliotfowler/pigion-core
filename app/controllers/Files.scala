@@ -25,6 +25,7 @@ import fly.play.s3.BucketFilePart
 import play.api.mvc.MultipartFormData.FilePart
 import fly.play.s3.BucketFile
 import java.net.URLEncoder
+import play.Logger
 
 object Files extends Controller {
 
@@ -67,12 +68,14 @@ object Files extends Controller {
     val uploadResult = await(bucket completeMultipartUpload (uploadTicket, partUploadTickets))
 
     // We only want to create a URL from the last one
+    Logger.info("flowChunk Number: " + flowData.flowChunkNumber + " flowTotalChunks: " + flowData.flowTotalChunks)
     if(flowData.flowChunkNumber == flowData.flowTotalChunks) {
       val url = bucket.url(URLEncoder.encode(flowData.flowFileName, "UTF-8"))
       Destination.create(url)
       Ok(Destination.create(url))
+    } else {
+      Ok("uploading")
     }
-    Ok("uploading")
    }
 
   def sendStartRequest = TODO
