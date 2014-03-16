@@ -1,0 +1,16 @@
+<div>
+    <table>
+        <thead>
+            <th>File name</th>
+            <th>URL</th>
+            <th>Content Type</th>
+        </thead>
+        <tbody>
+            <tr ng-repeat="destination in destinations">
+                <td>{{destination.fileName}}</td>
+                <td><a href="{{destination.shortUrlHash}}">{{destination.shortUrlHash}}</a></td>
+                <td>{{destination.contentType}}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>

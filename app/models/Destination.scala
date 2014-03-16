@@ -4,8 +4,9 @@ import anorm._
 import anorm.SqlParser._
 import play.api.db.DB
 import play.api.Play.current
+import play.api.libs.json.{Writes, Json}
 
-case class Destination(id: Long, originalUrl: String, shortUrlHash: String)
+case class Destination(id: Long, originalUrl: String, shortUrlHash: String, fileName:String, contentType: String)
 
 object Destination {
 
@@ -20,21 +21,35 @@ object Destination {
   val destination = {
     get[Long]("id") ~
     get[String]("originalUrl") ~
-    get[String]("shortUrlHash") map {
-      case id ~ originalUrl ~ shortUrlHash => Destination(id, originalUrl, shortUrlHash)
+    get[String]("shortUrlHash") ~
+    get[String]("fileName") ~
+    get[String]("contentType") map {
+      case id ~ originalUrl ~ shortUrlHash ~ fileName ~ contentType => Destination(id, originalUrl, shortUrlHash, fileName, contentType)
     }
+  }
+
+  implicit val locationWrites = new Writes[Destination] {
+    def writes(destination: Destination) = Json.obj(
+      "id" -> destination.id,
+      "shortUrlHash" -> destination.shortUrlHash,
+      "fileName" -> destination.fileName,
+      "contentType" -> destination.contentType
+    )
   }
 
   def all(): List[Destination] = DB.withConnection { implicit c =>
     SQL("SELECT * FROM destination").as(destination *)
   }
 
-  def create(originalUrl: String): String = {
+  def create(originalUrl: String, fileName: String, contentType: String): String = {
     val shortUrlHash: String = dehydrate(getNextId())
     DB.withConnection { implicit c =>
-      SQL("INSERT INTO destination (originalUrl, shortUrlHash) values ({originalUrl}, {shortUrlHash})").on(
+      SQL("INSERT INTO destination (originalUrl, shortUrlHash, fileName, contentType) " +
+        "values ({originalUrl}, {shortUrlHash}, {fileName}, {contentType})").on(
         'originalUrl -> originalUrl,
-        'shortUrlHash -> shortUrlHash
+        'shortUrlHash -> shortUrlHash,
+        'fileName -> fileName,
+        'contentType -> contentType
       ).executeUpdate()
     }
     shortUrlHash
@@ -51,6 +66,14 @@ object Destination {
       SQL("SELECT originalUrl FROM destination WHERE id={id}").on(
         'id -> saturate(hash)
       ).as(scalar[String].single)
+    }
+  }
+
+  def getDestinationForHash(hash: String): Option[Destination] = {
+    DB.withConnection { implicit c =>
+      SQL("SELECT * FROM destination WHERE id={id}").on(
+        'id -> saturate(hash)
+      ).as(destination *).headOption
     }
   }
 

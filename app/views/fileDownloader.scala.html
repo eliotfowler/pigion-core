@@ -1,0 +1,15 @@
+@(destination: Destination)
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>File</title>
+    </head>
+    <body>
+        <div id="fileContainer">
+            <form action="@destination.originalUrl">
+                <input type="submit" value="Download">
+            </form>
+        </div>
+    </body>
+</html>

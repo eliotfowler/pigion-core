@@ -1,6 +1,6 @@
 'use strict';
 
-var pigion = angular.module('pigion.controllers', []);
+var pigion = angular.module('pigion.controllers');
 
 pigion.controller('ShortenerController', ['$scope', 'shortenerService', '$http', function($scope, shortenerService, $http) {
     $scope.submitButtonWasTapped = function submitButtonWasTapped() {

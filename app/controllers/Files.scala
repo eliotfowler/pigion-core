@@ -32,7 +32,6 @@ object Files extends Controller {
   var partUploadTickets: Seq[BucketFilePartUploadTicket] = Seq()
 
   def upload = Action(multipartFormDataAsBytes) { request =>
-    System.out.println("here")
     // Turns Map(String, Seq[String]) into Map(String, String)
     val body = request.body.dataParts.map { case (k,Seq(v)) => (k,v) }
 
@@ -50,7 +49,7 @@ object Files extends Controller {
 
     // Now we need to figure out if this is the beginning of an upload, an in progress upload, or the end of an upload
     val fileName = flowData.flowFileName
-    val fileContentType = MimeTypes.forFileName(flowData.flowFileName).getOrElse(".txt")
+    val fileContentType = MimeTypes.forFileName(flowData.flowFileName.toLowerCase).getOrElse("application/octet-stream")
     val bucketFile = BucketFile(URLEncoder.encode(fileName, "UTF-8"), fileContentType)
 
     val uploadTicket = await(bucket.initiateMultipartUpload(bucketFile))
@@ -65,21 +64,16 @@ object Files extends Controller {
       }
     }
 
-    val uploadResult = await(bucket completeMultipartUpload (uploadTicket, partUploadTickets))
+    await(bucket completeMultipartUpload (uploadTicket, partUploadTickets))
 
     // We only want to create a URL from the last one
     if(flowData.flowChunkNumber == flowData.flowTotalChunks) {
       val url = bucket.url(URLEncoder.encode(flowData.flowFileName, "UTF-8"))
-      Destination.create(url)
-      Ok(Destination.create(url))
+      Ok(Destination.create(url,flowData.flowFileName, fileContentType))
     } else {
       Ok("uploading")
     }
    }
-
-  def sendStartRequest = TODO
-
-  def sendFinishedRequest = TODO
 
   def handleFilePartAsByteArray: PartHandler[FilePart[Array[Byte]]] =
     handleFilePart {
@@ -98,9 +92,4 @@ object Files extends Controller {
   def multipartFormDataAsBytes:play.api.mvc.BodyParser[MultipartFormData[Array[Byte]]] = multipartFormData(handleFilePartAsByteArray)
 
   def await[T](a: Awaitable[T]): T = Await.result(a, Duration.Inf)
-
-  def notifyOfUpload = Action { implicit request =>
-
-    Ok("")
-  }
 }
