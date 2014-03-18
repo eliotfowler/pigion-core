@@ -10,12 +10,10 @@ object Application extends Controller with SecureSocial {
     Ok(views.html.index())
   }
 
-  def signupBetaClosed = Action {
+  def signupBetaClosed() = Action {
     Ok(views.html.signupBetaClosed())
   }
 
-  def sendBetaInvite(email: String) = Action {
-
-  }
+  def sendBetaInvite(email: String) = TODO
 
 }
