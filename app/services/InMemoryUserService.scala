@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package service
+package services
 
 import play.api.{Logger, Application}
 import securesocial.core._
@@ -23,7 +23,7 @@ import securesocial.core.IdentityId
 
 
 /**
- * A Sample In Memory user service in Scala
+ * A Sample In Memory user services in Scala
  *
  * IMPORTANT: This is just a sample and not suitable for a production environment since
  * it stores everything in memory.
