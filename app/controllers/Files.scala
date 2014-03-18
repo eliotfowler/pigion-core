@@ -1,23 +1,19 @@
 package controllers
 
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.Controller
 import fly.play.s3._
 import models.{Destination, FlowData}
 import play.api.mvc.BodyParsers.parse.Multipart.PartHandler
 import play.api.mvc.BodyParsers.parse.Multipart.handleFilePart
-import play.api.mvc.BodyParsers.parse.Multipart.FileInfo
 import play.api.mvc.BodyParsers.parse.multipartFormData
-import play.api.mvc.MultipartFormData.FilePart
 import play.api.libs.iteratee.Iteratee
 import java.io.ByteArrayOutputStream
 import play.api.mvc.MultipartFormData
 import play.api.libs.MimeTypes
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import scala.concurrent.Await
 import scala.concurrent.Awaitable
-import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import play.api.mvc.BodyParsers.parse.Multipart.FileInfo
 import fly.play.s3.BucketFilePartUploadTicket
@@ -25,13 +21,19 @@ import fly.play.s3.BucketFilePart
 import play.api.mvc.MultipartFormData.FilePart
 import fly.play.s3.BucketFile
 import java.net.URLEncoder
-import play.Logger
+import securesocial.core._
 
-object Files extends Controller {
+object Files extends Controller with SecureSocial {
+
+  case class WithProvider(provider: String) extends Authorization {
+    def isAuthorized(user: Identity) = {
+      user.identityId.providerId == provider
+    }
+  }
 
   var partUploadTickets: Seq[BucketFilePartUploadTicket] = Seq()
 
-  def upload = Action(multipartFormDataAsBytes) { request =>
+  def upload = SecuredAction(multipartFormDataAsBytes) { request =>
     // Turns Map(String, Seq[String]) into Map(String, String)
     val body = request.body.dataParts.map { case (k,Seq(v)) => (k,v) }
 
@@ -48,9 +50,9 @@ object Files extends Controller {
     val bucket = S3("pigion")
 
     // Now we need to figure out if this is the beginning of an upload, an in progress upload, or the end of an upload
-    val fileName = flowData.flowFileName
+    val fileName = URLEncoder.encode(request.user.identityId + "/" + flowData.flowFileName, "UTF-8")
     val fileContentType = MimeTypes.forFileName(flowData.flowFileName.toLowerCase).getOrElse("application/octet-stream")
-    val bucketFile = BucketFile(URLEncoder.encode(fileName, "UTF-8"), fileContentType)
+    val bucketFile = BucketFile(fileName, fileContentType)
 
     val uploadTicket = await(bucket.initiateMultipartUpload(bucketFile))
 
@@ -68,10 +70,10 @@ object Files extends Controller {
 
     // We only want to create a URL from the last one
     if(flowData.flowChunkNumber == flowData.flowTotalChunks) {
-      val url = bucket.url(URLEncoder.encode(flowData.flowFileName, "UTF-8"))
+      val url = bucket.url(fileName)
       Ok(Destination.create(url,flowData.flowFileName, fileContentType))
     } else {
-      Ok("uploading")
+      Ok
     }
    }
 
