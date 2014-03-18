@@ -17,7 +17,7 @@ GET     /logout                     securesocial.controllers.LoginPage.logout
 #GET     /signup                     securesocial.controllers.Registration.startSignUp
 #POST    /signup                     securesocial.controllers.Registration.handleStartSignUp
 GET     /signup                     controllers.Application.signupBetaClosed
-POST    /sendBetaInvite             controllers.Application.sendBetaInvite(email: String)
+POST    /sendBetaInvite             controllers.Application.sendBetaInvite(email: String, key: String)
 
 GET     /signup/:token              securesocial.controllers.Registration.signUp(token)
 POST    /signup/:token              securesocial.controllers.Registration.handleSignUp(token)
