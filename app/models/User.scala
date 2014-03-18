@@ -292,7 +292,7 @@ class User(application: Application) extends UserServicePlugin(application) {
 
     def findByEmailAndProvider(email: String, providerId: String): Option[Identity] = {
       DB.withConnection { implicit c =>
-        SQL("SELECT * FROM p_user WHERE email={userId} AND providerId={providerId}").on(
+        SQL("SELECT * FROM p_user WHERE email={email} AND providerId={providerId}").on(
           'email -> email,
           'providerId -> providerId
         ).as(user *).headOption

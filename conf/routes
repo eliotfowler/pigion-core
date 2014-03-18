@@ -14,8 +14,11 @@ GET     /login                      securesocial.controllers.LoginPage.login
 GET     /logout                     securesocial.controllers.LoginPage.logout
 
 # User Registration and password handling
-GET     /signup                     securesocial.controllers.Registration.startSignUp
-POST    /signup                     securesocial.controllers.Registration.handleStartSignUp
+#GET     /signup                     securesocial.controllers.Registration.startSignUp
+#POST    /signup                     securesocial.controllers.Registration.handleStartSignUp
+GET     /signup
+POST    /sendBetaInvite             controllers.Application.sendBetaInvite(email: String)
+
 GET     /signup/:token              securesocial.controllers.Registration.signUp(token)
 POST    /signup/:token              securesocial.controllers.Registration.handleSignUp(token)
 GET     /reset                      securesocial.controllers.Registration.startResetPassword
