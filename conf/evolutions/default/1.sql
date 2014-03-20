@@ -5,13 +5,18 @@
 CREATE SEQUENCE destination_id_seq;
 CREATE TABLE destination (
   id integer NOT NULL DEFAULT nextval('destination_id_seq'),
+  userSeqId integer NOT NULL,
   originalUrl text NOT NULL,
   shortUrlHash text NOT NULL,
   fileName text NOT NULL,
-  contentType text NOT NULL
+  contentType text NOT NULL,
+  expirationTime timestamp,
+  isExpired boolean default false
 );
 
+CREATE SEQUENCE p_user_id_seq;
 CREATE TABLE p_user (
+  seqId integer NOT NULL DEFAULT nextval('p_user_id_seq'),
   userId text NOT NULL,
   providerId text NOT NULL,
   firstName text,

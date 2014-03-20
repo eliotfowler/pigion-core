@@ -5,11 +5,16 @@ import anorm.SqlParser._
 import play.api.db.DB
 import play.api.Play.current
 import play.api.libs.json.{Writes, Json}
+import org.joda.time.DateTime
+import java.sql.{Date, Timestamp}
+import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
+import fly.play.s3.S3
+import play.api.Logger
 
-case class Destination(id: Long, originalUrl: String, shortUrlHash: String, fileName:String, contentType: String)
+
+case class Destination(id: Long, userSeqId: Long, originalUrl: String, shortUrlHash: String, fileName:String, contentType: String, expirationTime: DateTime, isExpired: Boolean)
 
 object Destination {
-
   val BASE: Int = 62
 
   val UPPERCASE_OFFSET: Int = 55
@@ -20,11 +25,27 @@ object Destination {
 
   val destination = {
     get[Long]("id") ~
+    get[Long]("userSeqId") ~
     get[String]("originalUrl") ~
     get[String]("shortUrlHash") ~
     get[String]("fileName") ~
-    get[String]("contentType") map {
-      case id ~ originalUrl ~ shortUrlHash ~ fileName ~ contentType => Destination(id, originalUrl, shortUrlHash, fileName, contentType)
+    get[String]("contentType") ~
+    get[DateTime]("expirationTime") ~
+    get[Boolean]("isExpired") map {
+      case id ~ userSeqId ~ originalUrl ~ shortUrlHash ~ fileName ~ contentType ~ expirationTime ~ isExpired =>
+        Destination(id, userSeqId, originalUrl, shortUrlHash, fileName, contentType, expirationTime, isExpired)
+    }
+  }
+
+  val dateFormatGeneration: DateTimeFormatter = DateTimeFormat.forPattern("yyyyMMddHHmmssSS");
+
+  implicit def rowToDateTime: Column[DateTime] = Column.nonNull { (value, meta) =>
+    val MetaDataItem(qualified, nullable, clazz) = meta
+    value match {
+      case ts: Timestamp => Right(new DateTime(ts.getTime))
+      case d: Date => Right(new DateTime(d.getTime))
+      case str: String => Right(dateFormatGeneration.parseDateTime(str))
+      case _ => Left(TypeDoesNotMatch("Cannot convert " + value + ":" + value.asInstanceOf[AnyRef].getClass) )
     }
   }
 
@@ -33,7 +54,9 @@ object Destination {
       "id" -> destination.id,
       "shortUrlHash" -> destination.shortUrlHash,
       "fileName" -> destination.fileName,
-      "contentType" -> destination.contentType
+      "contentType" -> destination.contentType,
+      "expirationTime" -> destination.expirationTime,
+      "isExpired" -> destination.isExpired
     )
   }
 
@@ -41,15 +64,17 @@ object Destination {
     SQL("SELECT * FROM destination").as(destination *)
   }
 
-  def create(originalUrl: String, fileName: String, contentType: String): String = {
+  def create(originalUrl: String, fileName: String, contentType: String, seqId: Long): String = {
     val shortUrlHash: String = dehydrate(getNextId())
     DB.withConnection { implicit c =>
-      SQL("INSERT INTO destination (originalUrl, shortUrlHash, fileName, contentType) " +
-        "values ({originalUrl}, {shortUrlHash}, {fileName}, {contentType})").on(
+      SQL("INSERT INTO destination (originalUrl, shortUrlHash, fileName, contentType, expirationTime, isExpired, userSeqId) " +
+        "values ({originalUrl}, {shortUrlHash}, {fileName}, {contentType}, {expirationTime}, false, {userSeqId})").on(
         'originalUrl -> originalUrl,
         'shortUrlHash -> shortUrlHash,
         'fileName -> fileName,
-        'contentType -> contentType
+        'contentType -> contentType,
+        'expirationTime -> new Timestamp(DateTime.now().plusMinutes(10).getMillis()),
+        'userSeqId -> seqId
       ).executeUpdate()
     }
     shortUrlHash
@@ -59,6 +84,23 @@ object Destination {
     SQL("DELETE FROM destination WHERE id = {id}").on(
       'id -> id
     ).executeUpdate()
+  }
+
+  def expired() = DB.withConnection { implicit c =>
+    SQL("SELECT * FROM destination WHERE isExpired = true").as(destination *)
+  }
+
+  def removeExpiredFromS3() {
+    val bucket = S3("pigion")
+    val expiredDestinations = expired()
+    expiredDestinations.foreach(destination => {
+
+      val owner: User = User.find(destination.userSeqId).get
+      val modifiedFileName = owner.identityId + "/" + destination.fileName
+      Logger.info("modified file name is " + modifiedFileName)
+      bucket - modifiedFileName
+//      delete(destination.id)
+    })
   }
 
   def getUrlForHash(hash: String): String = {

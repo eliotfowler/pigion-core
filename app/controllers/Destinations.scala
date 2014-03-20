@@ -1,7 +1,7 @@
 package controllers
 
 import play.api.mvc._
-import models.Destination
+import models.{User, Destination}
 import play.api.libs.json._
 import play.api.data._
 import play.api.data.Forms._
@@ -25,9 +25,14 @@ object Destinations extends Controller with SecureSocial {
 
   def shortenUrl = SecuredAction { implicit request =>
     val originalUrl: String = (request.body.asJson.get \ "originalUrl").asOpt[String].get
+    val user = User.find(request.user.identityId)
+    val userSeqId = user match {
+      case Some(u) => u.seqId
+      case _ => -1
+    }
     Ok(Json.obj(
       "originalUrl"->originalUrl,
-      "shortUrl"->Destination.create(originalUrl, originalUrl, "url")
+      "shortUrl"->Destination.create(originalUrl, originalUrl, "url", userSeqId)
     ))
   }
 

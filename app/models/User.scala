@@ -9,15 +9,12 @@ import securesocial.core.PasswordInfo
 import anorm.~
 import securesocial.core.OAuth2Info
 import securesocial.core.OAuth1Info
-import play.api.Application
 import securesocial.core.providers.Token
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormatter, DateTimeFormat}
 import play.api.Play.current
 
-
-class User(application: Application) extends UserServicePlugin(application) {
-  case class User(identityId: IdentityId, firstName: String, lastName: String, fullName: String, email: Option[String],
+  case class User(seqId: Long, identityId: IdentityId, firstName: String, lastName: String, fullName: String, email: Option[String],
                   oAuth1Info: Option[OAuth1Info], oAuth2Info: Option[OAuth2Info], avatarUrl: Option[String],
                   passwordInfo: Option[PasswordInfo], authMethod: AuthenticationMethod) extends Identity
 
@@ -43,6 +40,7 @@ class User(application: Application) extends UserServicePlugin(application) {
       }
 
     val user = {
+      get[Long]("seqId") ~
       get[String]("userId") ~
       get[String]("providerId") ~
       get[Option[String]]("firstName") ~
@@ -60,10 +58,10 @@ class User(application: Application) extends UserServicePlugin(application) {
       get[Option[String]]("passwordHasher") ~
       get[Option[String]]("password") ~
       get[Option[String]]("passwordSalt") map {
-        case userId ~ providerId ~ firstName ~ lastName ~ fullName ~ email ~ avatarUrl ~
+        case seqId ~ userId ~ providerId ~ firstName ~ lastName ~ fullName ~ email ~ avatarUrl ~
           authenticationMethod ~ oAuth1Token ~ oAuth1Secret ~ oAuth2AccessToken ~ oAuth2TokenType ~
           oAuth2ExpiresIn ~ oAuth2RefreshToken ~ passwordHasher ~ password ~ passwordSalt =>
-          User(IdentityId(userId, providerId), firstName.getOrElse(""), lastName.getOrElse(""), fullName.getOrElse(""), email,
+          User(seqId, IdentityId(userId, providerId), firstName.getOrElse(""), lastName.getOrElse(""), fullName.getOrElse(""), email,
             (oAuth1Token, oAuth1Secret),
             (oAuth2AccessToken, oAuth2TokenType, oAuth2ExpiresIn, oAuth2RefreshToken),
             avatarUrl, (passwordHasher, password, passwordSalt), AuthenticationMethod(authenticationMethod))
@@ -126,7 +124,7 @@ class User(application: Application) extends UserServicePlugin(application) {
           'creationTime -> new Timestamp(token.creationTime.getMillis),
           'expirationTime -> new Timestamp(token.expirationTime.getMillis),
           'isSignUp -> token.isSignUp
-        )
+        ).executeUpdate()
       }
     }
 
@@ -179,9 +177,9 @@ class User(application: Application) extends UserServicePlugin(application) {
         case _ => null
       }
 
-      val passwordSalt:String = existingUser.passwordInfo match {
-        case Some(info) => info.salt.get
-        case _ => null
+      val passwordSalt:Option[String] = existingUser.passwordInfo match {
+        case Some(info) => info.salt
+        case _ => None
       }
 
       DB.withConnection { implicit c =>
@@ -206,10 +204,10 @@ class User(application: Application) extends UserServicePlugin(application) {
             'oAuth2RefreshToken -> oAuth2RefreshToken,
             'passwordHasher -> passwordHasher,
             'password -> password,
-            'passwordSalt -> passwordSalt,
+            'passwordSalt -> passwordSalt.getOrElse(null),
             'userId -> existingUser.identityId.userId,
             'providerId -> existingUser.identityId.providerId
-         )
+         ).executeUpdate()
       }
 
       find(existingUser.identityId).get
@@ -255,9 +253,9 @@ class User(application: Application) extends UserServicePlugin(application) {
         case _ => null
       }
 
-      val passwordSalt:String = identity.passwordInfo match {
-        case Some(info) => info.salt.get
-        case _ => null
+      val passwordSalt:Option[String] = identity.passwordInfo match {
+        case Some(info) => info.salt
+        case _ => None
       }
 
       DB.withConnection { implicit c =>
@@ -283,7 +281,7 @@ class User(application: Application) extends UserServicePlugin(application) {
             'oAuth2RefreshToken -> oAuth2RefreshToken,
             'passwordHasher -> passwordHasher,
             'password -> password,
-            'passwordSalt -> passwordSalt
+            'passwordSalt -> passwordSalt.getOrElse(null)
           ).executeUpdate()
       }
 
@@ -299,7 +297,7 @@ class User(application: Application) extends UserServicePlugin(application) {
       }
     }
 
-    def find(id: IdentityId): Option[Identity] = {
+    def find(id: IdentityId): Option[User] = {
       DB.withConnection { implicit c =>
         SQL("SELECT * FROM p_user WHERE userId={userId} AND providerId={providerId}").on(
           'userId -> id.userId,
@@ -307,19 +305,12 @@ class User(application: Application) extends UserServicePlugin(application) {
         ).as(user *).headOption
       }
     }
+
+    def find(seqId: Long): Option[User] = {
+      DB.withConnection { implicit c =>
+        SQL("SELECT * FROM p_user WHERE seqId={seqId}").on(
+          'seqId -> seqId
+        ).as(user *).headOption
+      }
+    }
   }
-
-  override def findByEmailAndProvider(email: String, providerId: String): Option[Identity] = User.findByEmailAndProvider(email, providerId)
-
-  override def deleteToken(uuid: String): Unit = User.deleteToken(uuid)
-
-  override def findToken(token: String): Option[Token] = User.findToken(token)
-
-  override def save(token: Token): Unit = User.save(token)
-
-  override def save(user: Identity): Identity = User.save(user)
-
-  override def find(id: IdentityId): Option[Identity] = User.find(id)
-
-  override def deleteExpiredTokens(): Unit = User.deleteExpiredTokens()
-}

@@ -2,7 +2,7 @@ package controllers
 
 import play.api.mvc.Controller
 import fly.play.s3._
-import models.{Destination, FlowData}
+import models.{User, Destination, FlowData}
 import play.api.mvc.BodyParsers.parse.Multipart.PartHandler
 import play.api.mvc.BodyParsers.parse.Multipart.handleFilePart
 import play.api.mvc.BodyParsers.parse.multipartFormData
@@ -34,6 +34,9 @@ object Files extends Controller with SecureSocial {
   var partUploadTickets: Seq[BucketFilePartUploadTicket] = Seq()
 
   def upload = SecuredAction(multipartFormDataAsBytes) { request =>
+    // First get the user
+    val user: Option[User] = User.find(request.user.identityId)
+
     // Turns Map(String, Seq[String]) into Map(String, String)
     val body = request.body.dataParts.map { case (k,Seq(v)) => (k,v) }
 
@@ -71,7 +74,11 @@ object Files extends Controller with SecureSocial {
     // We only want to create a URL from the last one
     if(flowData.flowChunkNumber == flowData.flowTotalChunks) {
       val url = bucket.url(fileName)
-      Ok(Destination.create(url,flowData.flowFileName, fileContentType))
+      val seqId = user match {
+        case Some(u) => u.seqId
+        case _ => -1
+      }
+      Ok(Destination.create(url,flowData.flowFileName, fileContentType, seqId))
     } else {
       Ok
     }
