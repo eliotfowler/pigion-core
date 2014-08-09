@@ -33,7 +33,8 @@ CREATE TABLE p_user (
   passwordHasher text,
   password text,
   passwordSalt text,
-  authenticationMethod text
+  authenticationMethod text,
+  isAdmin boolean default false
 );
 
 CREATE TABLE token (

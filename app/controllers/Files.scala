@@ -1,15 +1,14 @@
 package controllers
 
-import play.api.mvc.Controller
+import play.api.mvc.{Action, Controller, MultipartFormData}
 import fly.play.s3._
-import models.{User, Destination, FlowData}
+import models.{MultipartUploadHandler, User, Destination, FlowData}
 import play.api.mvc.BodyParsers.parse.Multipart.PartHandler
 import play.api.mvc.BodyParsers.parse.Multipart.handleFilePart
 import play.api.mvc.BodyParsers.parse.multipartFormData
 import play.api.libs.iteratee.Iteratee
 import java.io.ByteArrayOutputStream
-import play.api.mvc.MultipartFormData
-import play.api.libs.MimeTypes
+import play.api.libs.{json, MimeTypes}
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import scala.concurrent.Await
@@ -22,6 +21,8 @@ import play.api.mvc.MultipartFormData.FilePart
 import fly.play.s3.BucketFile
 import java.net.URLEncoder
 import securesocial.core._
+import play.api.libs.json.Json
+import services.StreamingBodyParser.streamingBodyParser
 
 object Files extends Controller with SecureSocial {
 
@@ -31,11 +32,26 @@ object Files extends Controller with SecureSocial {
     }
   }
 
+  def streamConstructor(filename: String) = {
+    Option(new MultipartUploadHandler(filename))
+  }
+
+  def upload2 = Action(streamingBodyParser(streamConstructor)) { request =>
+    val params = request.body.asFormUrlEncoded // you can extract request parameters for whatever your app needs
+    val result = request.body.files(0).ref
+    if (result.isRight) { // streaming succeeded
+    val filename = result.right.get.filename
+      Ok(s"File $filename successfully streamed.")
+    } else { // file streaming failed
+      Ok(s"Streaming error occurred: ${result.left.get.errorMessage}")
+    }
+  }
+
   var partUploadTickets: Seq[BucketFilePartUploadTicket] = Seq()
 
-  def upload = SecuredAction(multipartFormDataAsBytes) { request =>
+  def upload = Action(multipartFormDataAsBytes) { request =>
     // First get the user
-    val user: Option[User] = User.find(request.user.identityId)
+//    val user: Option[User] = User.find(request.user.identityId)
 
     // Turns Map(String, Seq[String]) into Map(String, String)
     val body = request.body.dataParts.map { case (k,Seq(v)) => (k,v) }
@@ -53,7 +69,8 @@ object Files extends Controller with SecureSocial {
     val bucket = S3("pigion")
 
     // Now we need to figure out if this is the beginning of an upload, an in progress upload, or the end of an upload
-    val fileName = URLEncoder.encode(request.user.identityId + "/" + flowData.flowFileName, "UTF-8")
+//    val fileName = URLEncoder.encode(request.user.identityId + "/" + flowData.flowFileName, "UTF-8")
+    val fileName = URLEncoder.encode(flowData.flowFileName, "UTF-8")
     val fileContentType = MimeTypes.forFileName(flowData.flowFileName.toLowerCase).getOrElse("application/octet-stream")
     val bucketFile = BucketFile(fileName, fileContentType)
 
@@ -74,11 +91,14 @@ object Files extends Controller with SecureSocial {
     // We only want to create a URL from the last one
     if(flowData.flowChunkNumber == flowData.flowTotalChunks) {
       val url = bucket.url(fileName)
-      val seqId = user match {
-        case Some(u) => u.seqId
-        case _ => -1
-      }
-      Ok(Destination.create(url,flowData.flowFileName, fileContentType, seqId))
+//      val seqId = user match {
+//        case Some(u) => u.seqId
+//        case _ => -1
+//      }
+      val seqId = -1
+      Ok(Json.obj(
+        "shortUrl" -> Destination.create(url,flowData.flowFileName, fileContentType, seqId))
+      )
     } else {
       Ok
     }
@@ -102,3 +122,4 @@ object Files extends Controller with SecureSocial {
 
   def await[T](a: Awaitable[T]): T = Await.result(a, Duration.Inf)
 }
+

@@ -16,7 +16,7 @@ import play.api.Play.current
 
   case class User(seqId: Long, identityId: IdentityId, firstName: String, lastName: String, fullName: String, email: Option[String],
                   oAuth1Info: Option[OAuth1Info], oAuth2Info: Option[OAuth2Info], avatarUrl: Option[String],
-                  passwordInfo: Option[PasswordInfo], authMethod: AuthenticationMethod) extends Identity
+                  passwordInfo: Option[PasswordInfo], authMethod: AuthenticationMethod, isAdmin: Boolean) extends Identity
 
   object User {
     implicit def tuple2OAuth1Info(tuple: (Option[String], Option[String])): Option[OAuth1Info] =
@@ -57,14 +57,15 @@ import play.api.Play.current
       get[Option[String]]("oAuth2RefreshToken") ~
       get[Option[String]]("passwordHasher") ~
       get[Option[String]]("password") ~
-      get[Option[String]]("passwordSalt") map {
+      get[Option[String]]("passwordSalt") ~
+      get[Boolean]("isAdmin") map {
         case seqId ~ userId ~ providerId ~ firstName ~ lastName ~ fullName ~ email ~ avatarUrl ~
           authenticationMethod ~ oAuth1Token ~ oAuth1Secret ~ oAuth2AccessToken ~ oAuth2TokenType ~
-          oAuth2ExpiresIn ~ oAuth2RefreshToken ~ passwordHasher ~ password ~ passwordSalt =>
+          oAuth2ExpiresIn ~ oAuth2RefreshToken ~ passwordHasher ~ password ~ passwordSalt ~ isAdmin =>
           User(seqId, IdentityId(userId, providerId), firstName.getOrElse(""), lastName.getOrElse(""), fullName.getOrElse(""), email,
             (oAuth1Token, oAuth1Secret),
             (oAuth2AccessToken, oAuth2TokenType, oAuth2ExpiresIn, oAuth2RefreshToken),
-            avatarUrl, (passwordHasher, password, passwordSalt), AuthenticationMethod(authenticationMethod))
+            avatarUrl, (passwordHasher, password, passwordSalt), AuthenticationMethod(authenticationMethod), isAdmin)
       }
     }
 
@@ -213,7 +214,7 @@ import play.api.Play.current
       find(existingUser.identityId).get
     }
 
-    def createNew(identity: Identity): Identity = {
+    def createNew(identity: Identity, isAdmin:Boolean = false): Identity = {
       val oAuth1Token: String = identity.oAuth1Info match {
         case Some(info) => info.token
         case _ => null
@@ -261,10 +262,10 @@ import play.api.Play.current
       DB.withConnection { implicit c =>
         SQL("INSERT INTO p_user (userId, providerId, firstName, lastName, fullName, email, " +
           "avatarUrl, authenticationMethod, oAuth1Token, oAuth1Secret, oAuth2AccessToken, oAuth2TokenType, " +
-          "oAuth2ExpiresIn, oAuth2RefreshToken, passwordHasher, password, passwordSalt) VALUES " +
+          "oAuth2ExpiresIn, oAuth2RefreshToken, passwordHasher, password, passwordSalt, isAdmin) VALUES " +
           "({userId}, {providerId}, {firstName}, {lastName}, {fullName}, {email}, {avatarUrl}, " +
           "{authMethod}, {oAuth1Token}, {oAuth1Secret}, {oAuth2AccessToken}, {oAuth2TokenType}, " +
-          "{oAuth2ExpiresIn}, {oAuth2RefreshToken}, {passwordHasher}, {password}, {passwordSalt})").on(
+          "{oAuth2ExpiresIn}, {oAuth2RefreshToken}, {passwordHasher}, {password}, {passwordSalt}, {isAdmin})").on(
             'userId -> identity.identityId.userId,
             'providerId -> identity.identityId.providerId,
             'firstName -> identity.firstName,
@@ -281,7 +282,8 @@ import play.api.Play.current
             'oAuth2RefreshToken -> oAuth2RefreshToken,
             'passwordHasher -> passwordHasher,
             'password -> password,
-            'passwordSalt -> passwordSalt.getOrElse(null)
+            'passwordSalt -> passwordSalt.getOrElse(null),
+            'isAdmin -> isAdmin
           ).executeUpdate()
       }
 
