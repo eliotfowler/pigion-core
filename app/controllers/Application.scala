@@ -10,4 +10,7 @@ object Application extends Controller with SecureSocial {
     Ok(views.html.index())
   }
 
+  def landing = Action {
+    Ok(views.html.landing())
+  }
 }

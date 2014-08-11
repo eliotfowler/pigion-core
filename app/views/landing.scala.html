@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+  <meta charset="UTF-8">
+    <meta name="description" content="Pigion. The simplest share anything tool.">
+    <meta name="keywords" content="pigion, pigeon, share, utility, simple, amazing, beautiful, open source, free">
+    <meta name="author" content="Eliot Fowler and Andrew Acree">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title></title>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="@routes.Assets.at("css/reset.css")"/>
+  <link rel="stylesheet" href="@routes.Assets.at("css/grid.css")"/>
+  <link rel="stylesheet" href="@routes.Assets.at("css/landing.css")"/>
+
+</head>
+<body>
+    @* Since this app is responsive, this will be the shown on mobile devices *@
+    <div id="mobile-nav">
+        <div class="container clearfix">
+            <div>
+
+                <div class="navigationButton sixteen columns clearfix">
+                    <img src="@routes.Assets.at("img/mobile-nav.png")" alt="Navigation" width="29" height="17"/>
+                </div>
+
+                <div class="navigationContent sixteen columns clearfix">
+                    <ul>
+                        <li><a href="#section1">Home</a></li>
+                        <li><a href="#section2">Features</a></li>
+                        <li><a href="#section3">Blog</a></li>
+                        <li><a href="#">Sign In</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* This will be the header for desktop devices *@
+    <header class="clearfix">
+        <div class="container">
+
+            <div id="logo" class="three columns"><img src="http://placehold.it/35x35" alt=""><h3 id="logo-name">Pigion</h3></div>
+
+            <nav id="navigation" class="thirteen columns">
+                <ul class="clearfix">
+                    <li><a class="current" href="#section1">Home</a></li>
+                    <li><a href="#section2">Features</a></li>
+                    <li><a href="#section3">Blog</a></li>
+                    <li><a href="#section4">Sign In</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    @* This will contain the promotional content at the top of the page *@
+    <section id="section1" class="hero container">
+        <div class="sixteen columns"><h3>Welcome to the last share tool you will ever need.</h3></div>
+        <div class="device-container">
+            <div class="content-box one-third column">
+                <img src="http://placehold.it/120x90" alt="" />
+                <img src="http://placehold.it/90x70" alt="" />
+                <img src="http://placehold.it/30x50" alt="" />
+                <h4>Apple</h4>
+            </div>
+            <div class="content-box one-third column">
+                <img src="http://placehold.it/90x70" alt="" />
+                <img src="http://placehold.it/30x50" alt="" />
+                <h4>Android</h4>
+            </div>
+            <div class="content-box one-third column">
+                <img src="http://placehold.it/90x70" alt="" />
+                <img src="http://placehold.it/120x90" alt="" />
+                <h4>Windows</h4>
+            </div>
+        </div>
+        <ul class="action sixteen columns">
+            <li><a class="button" href="#">Download now</a></li>
+        </ul>
+    </section>
+
+    <section id="section2" class="overview container">
+        <h2 class="sixteen columns">Simplicity at its finest.</h2>
+        <p class="sub-heading twelve columns offset-by-four">Pigion makes sharing fun again. With its breadth of features and being open source, Pigion will assist you in all your sharing needs.</p>
+        <br class="clear">
+
+        <div class="content-box one-third column">
+            <img src="http://placehold.it/150x150" alt="">
+            <h3>Secure Sharing</h3>
+            <p>Password protect any file you want to share.</p>
+        </div>
+        <div class="content-box one-third column">
+            <img src="http://placehold.it/150x150" alt="">
+            <h3>Dead simple sharing</h3>
+            <p>Simply press ⌘ + ^ + c to upload any file on OSX or ^ + ⇧ + C on Windows.</p>
+        </div>
+        <div class="content-box one-third column">
+            <img src="http://placehold.it/150x150" alt="">
+            <h3>Open Source</h3>
+            <p>Always know what is happening when uploading files because Pigion's source is totally open.</p>
+        </div>
+    </section>
+
+    <section id="section3" class="static container">
+        <img class="sidephone-small" src="http://placehold.it/350x450" alt="">
+
+        <div class="sixteen columns offset-by-eight">
+            <h2>Other Great Feature</h2>
+            <p>Pigion also has this other really cool feature. We'll tell you about it later.</p>
+        </div>
+    </section>
+
+    <section class="subscribe container">
+        <h2>Exclusive Access</h2>
+        <form action="#" method="post" class="clearfix">
+            <input type="text" name="email" value="" class="text">
+            <input type="submit" value="Subscribe now" name="subscribe" class="submit" id="subscribe">
+            <p class="sub-heading twelve columns offset-by-four">If you want to be one of the first people to use Pigion, just pop your email in the box.</p>
+            <div class="notification success closeable sixteen columns">
+                <p><strong>Success!</strong> You will be one of the first people to use Pigion.</p>
+            </div>
+            <div class="notification error closeable sixteen columns">
+                <p><strong>Oops!</strong> Something is wrong, maybe double checking your email will help.</p>
+            </div>
+        </form>
+        <div class="small-border"></div>
+        <ul class="social-list clearfix">
+            <li><a href="#" target="_blank"><img src="@routes.Assets.at("img/facebook.png")" alt=""></a></li>
+            <li><a href="#" target="_blank"><img src="@routes.Assets.at("img/twitter.png")" alt=""></a></li>
+            <li><a href="#" target="_blank"><img src="@routes.Assets.at("img/linkedin.png")" alt=""></a></li>
+        </ul>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-author">
+                <p>made by</p>
+                <p>Eliot Fowler + Andrew Acree</p>
+            </div>
+            <div class="footer-copyright">
+                <p class="copyright">© 2014 Just Cause. All Rights Reserved. </p>
+                <ul class="footer-action">
+                    <li><a class="button small" href="#">Privacy Policy</i></a></li>
+                    <li><a id="top" class="button small" href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script src="@routes.Assets.at("js/landing/smoothscroll.js")" type="text/javascript" charset="utf-8"></script>
+    <script src="@routes.Assets.at("js/landing/jquery.easing.js")" type="text/javascript" charset="utf-8"></script>
+    <script src="@routes.Assets.at("js/landing/jquery.scrollto.min.js")" type="text/javascript" charset="utf-8"></script>
+    <script src="@routes.Assets.at("js/landing/jquery.localscroll.min.js")" type="text/javascript" charset="utf-8"></script>
+    <script src="@routes.Assets.at("js/landing/waypoints.min.js")" type="text/javascript" charset="utf-8"></script>
+    <script src="@routes.Assets.at("js/landing/notifications.js")" type="text/javascript" charset="utf-8"></script>
+    <script src="@routes.Assets.at("js/landing/init.js")" type="text/javascript" charset="utf-8"></script>
+</body>
+</html>

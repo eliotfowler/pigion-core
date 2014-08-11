@@ -3,11 +3,14 @@
 # ~~~~
 
 # Home page
-GET         /                              controllers.Application.index
+GET         /app/                          controllers.Application.index
 POST        /url/shorten                   controllers.Destinations.shortenUrl
 POST        /files/upload                  controllers.Files.upload
 POST        /files/uploadHttp              controllers.Files.upload2
 GET         /files                         controllers.Destinations.all
+
+# Static pages
+GET         /                              controllers.Application.landing
 
 # This is for Secure Social
 # Login page
