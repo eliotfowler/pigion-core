@@ -50,5 +50,5 @@ CREATE TABLE token (
 DROP TABLE destination;
 DROP SEQUENCE destination_id_seq;
 
-DROP TABLE user;
+DROP TABLE p_user;
 DROP TABLE token;
