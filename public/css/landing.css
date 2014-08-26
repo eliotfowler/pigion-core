@@ -1,6 +1,8 @@
 /* Setup */
 body {
-    background:#7BD164;
+    background: -webkit-linear-gradient(left, #84CFA6 0%, #65AEA9 100%);
+    background: -moz-linear-gradient(right, #84CFA6 0%, #65AEA9 100%);
+    background: linear-gradient(to right, #84CFA6 0%, #65AEA9 100%);
     color:#555;
     font:normal 15px "Roboto",arial,sans-serif;
     font-weight:300;
@@ -8,7 +10,6 @@ body {
 }
 
 p {
-    color: #666;
     line-height: 1.8em;
     margin: 0 0 20px;
 }
@@ -22,7 +23,6 @@ strong {
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: #555;
     font-style: normal;
     font-weight: 100;
     line-height: 1.17em;
@@ -110,9 +110,9 @@ a.button:hover i, a.button.small:hover i {
 
 html.ie header{border-bottom:1px solid #aeaeea;}
 
-.overview{text-align:center;padding-top:40px;padding-bottom:40px;border-bottom:1px solid #ececec;}
+.overview{text-align:center;padding-top:40px;padding-bottom:40px;}
 .content-box img{margin-bottom:20px;}
-.static{position:relative;overflow:hidden;padding-top:140px;height:455px;border-bottom:1px solid #ececec;}
+.static{position:relative;overflow:hidden;padding-top:140px;height:455px;}
 .sidephone-big,.sidephone-small{position:absolute;bottom:0;left:185px;}
 .static-list li{float:left;margin-right:15px;}
 .static-list li:last-of-type{margin-right:0px;}
@@ -126,12 +126,8 @@ html.ie {display:none;}
 
 /* Navigation */
 header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 300;
     width: 100%;
-    background: #BA64D1;
+    background: #4A5362;
     min-height: 80px;
     line-height: 80px;
     box-shadow: 0 0 4px rgba(0, 0, 0, .2);
@@ -204,7 +200,7 @@ nav ul li a:hover, nav ul li a.current {
 .hero {
     margin-top: 35px;
     /*background: url('../images/hero-hardware.jpg') no-repeat top right;*/
-    background: #ffa;
+    background: #4A5362;
 }
 
 .hero.container h3{
@@ -222,15 +218,13 @@ nav ul li a:hover, nav ul li a.current {
 }
 
 .action {
-    /*background: #fff;*/
-    /*background: -webkit-linear-gradient(top, rgba(255, 255, 255, .8) 0%, rgba(255, 255, 255, 1) 45%);*/
-    /*background: -moz-linear-gradient(top, rgba(255, 255, 255, .8) 0%, rgba(255, 255, 255, 1) 45%);*/
-    /*background: linear-gradient(top, rgba(255, 255, 255, .8) 0%, rgba(255, 255, 255, 1) 45%);*/
-    /*margin-top: 220px;*/
+    /*background: -webkit-linear-gradient(left, #84CFA6 0%, #65AEA9 100%);*/
+    /*background: -moz-linear-gradient(right, #84CFA6 0%, #65AEA9 100%);*/
+    /*background: linear-gradient(to right, #84CFA6 0%, #65AEA9 100%);*/
+    margin-top: 100px;
     padding-top: 40px;
     padding-bottom: 40px;
     text-align: center;
-    border-bottom: 1px solid #ececec;
 }
 
 .action li {
@@ -242,62 +236,53 @@ nav ul li a:hover, nav ul li a.current {
     margin-right: 0px;
 }
 
-/* =Gallery
--------------------------------------------------------------- */
+/* Section 1 */
 
-.gallery {
+#section1 {
+    background: #4A5362;
+    color: #fff;
+}
+
+#section1 h2 {
     text-align: center;
-    padding-top: 40px;
-    position: relative;
+    margin: 100px 0px 120px 0px;
 }
 
-.bx-wrapper {
-    background: url(../images/gallery/hardware.jpg) no-repeat top center;
-    padding-top: 85px;
-    border-bottom: 1px solid #ececec;
+#section1 a {
+    display: table-cell;
+    vertical-align: middle;
+    width: 280px;
+    height: 50px;
+    background: #3E424B;
+    color: #8694A1;
 }
 
-#gallery-pager {
-    padding-top: 20px;
-    padding-bottom: 20px;
+/* Section 2 */
+
+#section2 {
+    background: #6D579D;
+    color: white;
 }
 
-.bx-pager-item { display: inline-block; }
-.bx-pager-link {
-    display: inline-block;
-    text-indent: -999em;
-    width: 12px;
-    height: 12px;
-    margin: 0 5px;
-    background: url(../images/gallery/pager.png) no-repeat top center;
+/* Section 3 */
+
+#section3 {
+    background: #73BEA5;
 }
 
-.bx-pager-link.active { background: url(../images/gallery/pager-active.png) no-repeat top center; }
-.bx-pager-link:hover { background-position: bottom; }
-
-.bx-next, .bx-prev {
-    position: absolute;
-    display: block;
-    text-indent: -999em;
-    top: 55%;
-    width: 30px;
-    height: 73px;
+.static > span {
+    font-size: 36px;
 }
 
-.bx-next {
-    right: 0;
-    margin-right: -80px;
-    background: url(../images/gallery/next.png) no-repeat top right;
+#section3 div {
+
 }
 
-.bx-prev {
-    left: 0;
-    margin-left: -80px;
-    background: url(../images/gallery/prev.png) no-repeat top right;
+/* Section 4 */
+
+#section4 {
+    background: #4A5362;
 }
-
-.bx-prev:hover, .bx-next:hover { background-position: bottom; }
-
 
 /* =Subscribe
 -------------------------------------------------------------- */
@@ -402,10 +387,10 @@ nav ul li a:hover, nav ul li a.current {
 
 footer {
     width: 100%;
-    background: #f9f9f9;
-    border-top: 1px solid #ececec;
+    background: #3E424B;
     padding: 40px 0px 20px;
     text-align: center;
+    margin-bottom:10px;
 }
 
 .footer-author {
