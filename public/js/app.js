@@ -9,11 +9,13 @@ angular.module('pigion', [
     'pigion.directives',
     'pigion.controllers',
     'ngResource',
-    'flow'
+    'flow',
+    'angularFileUpload'
 ]).
 config(['$routeProvider', function($routeProvider) {
     $routeProvider.when('/shorten', {templateUrl: '/assets/partials/partial1.html', controller: 'ShortenerController'});
     $routeProvider.when('/upload', {templateUrl: '/assets/partials/partial2.html', controller: 'FileUploadController'});
+    $routeProvider.when('/upload2', {templateUrl: '/assets/partials/partial2b.html', controller: 'FileUpload2Controller'});
     $routeProvider.when('/list', {templateUrl: '/assets/partials/partial3.html', controller: 'FileListController'});
     $routeProvider.otherwise({redirectTo: '/shorten'});
 }]).

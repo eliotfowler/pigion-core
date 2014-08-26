@@ -13,6 +13,7 @@
         <ul class="menu">
             <li><a href="#/shorten">shorten</a></li>
             <li><a href="#/upload">upload</a></li>
+            <li><a href="#/upload2">upload</a></li>
             <li><a href="#/list">list</a></li>
             <li><a href="/logout">logout</a></li>
         </ul>
@@ -25,10 +26,13 @@
   <script src="//ajax.googleapis.com/ajax/libs/angularjs/x.x.x/angular.min.js"></script>
   -->
 
+        <script src="@routes.Assets.at("js/lib/angular-file-upload/angular-file-upload-shim.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("js/lib/angular/angular.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("js/lib/angular/angular-route.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("js/lib/angular/angular-resource.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("js/lib/ng-flow-standalone.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("js/lib/angular-file-upload/angular-file-upload.js")" type="text/javascript"></script>
+
         <script src="@routes.Assets.at("js/app.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("js/services.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("js/controllers.js")" type="text/javascript"></script>
@@ -38,6 +42,7 @@
         @*My controllers for angular*@
         <script src="@routes.Assets.at("js/controllers/shortenerController.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("js/controllers/fileUploadController.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.at("js/controllers/fileUpload2Controller.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("js/controllers/fileListController.js")" type="text/javascript"></script>
 
     </body>
