@@ -1,0 +1,57 @@
+@(loginForm: Form[(String,String)], errorMsg: Option[String] = None)(implicit request: RequestHeader)
+
+@import securesocial.core.IdentityProvider
+
+    <div class="page-header">
+        <h1>TestTestTestTest</h1>
+    </div>
+
+    @errorMsg.map { msg =>
+        <div class="alert alert-error">
+            @Messages(msg)
+        </div>
+    }
+
+    @request.flash.get("success").map { msg =>
+        <div class="alert alert-info">
+            @msg
+        </div>
+    }
+
+    @request.flash.get("error").map { msg =>
+        <div class="alert alert-error">
+            @msg
+        </div>
+    }
+
+
+    <form action = "@securesocial.core.providers.utils.RoutesHelper.authenticateByPost("userpass").absoluteURL(IdentityProvider.sslEnabled)"
+           class = "form-horizontal" autocomplete="off" method="POST">
+        <div class="control-group" id="username_field">
+            <label class="control-label" for="username">Email</label>
+            <div class="controls">
+                <input type="text" id="username" name="username" value="" class="input-xlarge">
+                <span class="help-block">Required</span>
+            </div>
+        </div>
+
+        <div class="control-group  " id="password_field">
+            <label class="control-label" for="password">Password</label>
+            <div class="controls">
+                <input type="password" id="password" name="password" class="input-xlarge">
+                <span class="help-block">Required</span>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Login</button>
+        </div>
+
+        <div class="clearfix">
+            <a href="/reset"><p>Did you forget your password? </p></a>
+        </div>
+
+        <div class="clearfix">
+            <p>If you don't have an account with us yet you can sign up <a href="/signup">here</a></p>
+        </div>
+    </form>
