@@ -2,9 +2,24 @@
 
 @import securesocial.core.IdentityProvider
 
-    <div class="page-header">
-        <h1>TestTestTestTest</h1>
-    </div>
+
+
+
+
+<!--<link href="/assets/css/bootstrap.min.css" rel="stylesheet"/>-->
+<link href="/assets/css/reset.css" rel="stylesheet"/>
+<link href="/assets/css/login.css" rel="stylesheet"/>
+
+<script type="text/javascript">
+$(document).ready(function() {
+    $('#fade')
+        .css({"opacity":0})   // Set to 0 as soon as possible – may result in flicker, but it's not hidden for users with no JS (Googlebot for instance!)
+        .delay(10000)           // Wait for a bit so the user notices it fade in
+        .css({"opacity":1});  // Fade it back in. Swap css for animate in legacy browsers if required.
+});
+
+</script>
+
 
     @errorMsg.map { msg =>
         <div class="alert alert-error">
@@ -25,33 +40,47 @@
     }
 
 
+
+
+
+<div class="center">
+    <div class="page-header">
+    <img src="/assets/img/logo.png" class="logo">
+    </div>
+    
     <form action = "@securesocial.core.providers.utils.RoutesHelper.authenticateByPost("userpass").absoluteURL(IdentityProvider.sslEnabled)"
-           class = "form-horizontal" autocomplete="off" method="POST">
-        <div class="control-group" id="username_field">
-            <label class="control-label" for="username">Email</label>
+           class = "form-horizontal" autocomplete="off" method="POST" id="fade">
+        <div class="control-group s_field" id="username_field">
+            <!--<label class="control-label" for="username">Email</label>-->
             <div class="controls">
-                <input type="text" id="username" name="username" value="" class="input-xlarge">
-                <span class="help-block">Required</span>
+                <input type="text" id="username" name="username" value="" placeholder="Email" class="input-xlarge"  autocomplete="off">
+                <!--<span class="help-block">Required</span>-->
             </div>
         </div>
 
-        <div class="control-group  " id="password_field">
-            <label class="control-label" for="password">Password</label>
+        <div class="control-group s_field" id="password_field">
+            <!--<label class="control-label" for="password">Password</label>-->
             <div class="controls">
-                <input type="password" id="password" name="password" class="input-xlarge">
-                <span class="help-block">Required</span>
+                <input type="password" id="password" name="password" placeholder="Password" class="input-xlarge"  autocomplete="off">
+                <!--<span class="help-block">Required</span>-->
             </div>
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Login</button>
+            <button type="submit" class="btn btn-primary special_b">SIGN IN</button>
+        
+	        <a href="/reset" class="btn2 username">username?</a>
         </div>
+        
 
-        <div class="clearfix">
-            <a href="/reset"><p>Did you forget your password? </p></a>
-        </div>
-
-        <div class="clearfix">
-            <p>If you don't have an account with us yet you can sign up <a href="/signup">here</a></p>
+        <div class="sign_up">
+			<a href="/signup">Sign Up</a>
         </div>
     </form>
+</div>
+
+
+  
+  
+
+<div class="b_foot"></div>
