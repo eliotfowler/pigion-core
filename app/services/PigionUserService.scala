@@ -17,7 +17,7 @@ import play.api.Play.current
 import models.User
 
 
-class UserService(application: Application) extends UserServicePlugin(application) {
+class PigionUserService extends UserService[User] {
 
   override def findByEmailAndProvider(email: String, providerId: String): Option[Identity] = User.findByEmailAndProvider(email, providerId)
 
