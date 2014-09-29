@@ -1,6 +1,8 @@
 package controllers
 
-import play.api.mvc.{Action, Controller, MultipartFormData}
+import org.joda.time.DateTime
+import play.api.Logger
+import play.api.mvc._
 import fly.play.s3._
 import models.{MultipartUploadHandler, User, Destination, FlowData}
 import play.api.mvc.BodyParsers.parse.Multipart.PartHandler
@@ -9,10 +11,9 @@ import play.api.mvc.BodyParsers.parse.multipartFormData
 import play.api.libs.iteratee.Iteratee
 import java.io.ByteArrayOutputStream
 import play.api.libs.{json, MimeTypes}
-import scala.concurrent.ExecutionContext
+import securesocial.core.{Authorization, RuntimeEnvironment}
+import scala.concurrent.{Future, ExecutionContext, Await, Awaitable}
 import ExecutionContext.Implicits.global
-import scala.concurrent.Await
-import scala.concurrent.Awaitable
 import scala.concurrent.duration.Duration
 import play.api.mvc.BodyParsers.parse.Multipart.FileInfo
 import fly.play.s3.BucketFilePartUploadTicket
@@ -20,106 +21,85 @@ import fly.play.s3.BucketFilePart
 import play.api.mvc.MultipartFormData.FilePart
 import fly.play.s3.BucketFile
 import java.net.URLEncoder
-import securesocial.core._
 import play.api.libs.json.Json
 import services.StreamingBodyParser.streamingBodyParser
 
-object Files extends Controller with SecureSocial {
+class Files(override implicit val env: RuntimeEnvironment[User]) extends securesocial.core.SecureSocial[User] {
 
-  case class WithProvider(provider: String) extends Authorization {
-    def isAuthorized(user: Identity) = {
-      user.identityId.providerId == provider
+  case class WithProvider(provider: String) extends Authorization[User] {
+    def isAuthorized(user: User, request: RequestHeader) = {
+      user.userProfile.providerId == provider
     }
+  }
+
+  case class Item(id: Long) // replace with your real world item
+
+  def SecuredItemAction(f: => Item => Request[AnyContent] => Result) =
+    SecuredAction { implicit request =>
+      val item = Some(new Item(7)) // replace with your real world item fetch
+      item.map { item =>
+        f(item)(request)
+      }.getOrElse(NotFound)
+    }
+
+  object LoggingAction extends ActionBuilder[Request] {
+    def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[SimpleResult]) = {
+      Logger.info("Calling action ------- WOO!")
+      block(request)
+    }
+  }
+
+  object FileValidationAction extends SecuredActionBuilder {
+    def invokeBlock[A](request: SecuredRequest[A], block: SecuredRequest[A] => Future[SimpleResult]) = {
+      Logger.info("User id is " + request.user.userProfile.userId)
+      block(request)
+    }
+
+    override def invokeBlock[A](request: Request[A], block: SecuredRequest[A] => Future[SimpleResult]) = {
+      val securedResult: Option[SecuredRequest[A]] = request match {
+        case r: SecuredRequest[A] => Option(r)
+        case _ => None
+      }
+      Logger.info("Calling action ------- WOO!")
+      securedResult match {
+        case Some(r) =>
+          block(r)
+        case _ =>
+          Future.successful(Forbidden)
+      }
+    }
+  }
+
+
+  def testAction = SecuredAction { request =>
+    Ok("Test succeeded")
   }
 
   def streamConstructor(filename: String) = {
     Option(new MultipartUploadHandler(filename))
   }
 
-  def upload2 = Action(streamingBodyParser(streamConstructor)) { request =>
+  def upload = SecuredAction(streamingBodyParser(streamConstructor)) { request =>
     val params = request.body.asFormUrlEncoded // you can extract request parameters for whatever your app needs
     val result = request.body.files(0).ref
-    if (result.isRight) { // streaming succeeded
-    val filename = result.right.get.filename
-      Ok(s"File $filename successfully streamed.")
-    } else { // file streaming failed
+    if (result.isRight) {
+    // streaming succeeded
+      val fileName = result.right.get.filename
+      val dateUploaded = new DateTime()
+      val bucket = S3("pigion")
+      val updatedFileName = request.user.userProfile.userId + "/" + dateUploaded.getMillis + "/" + fileName;
+      // TODO: Check this
+      bucket rename(fileName, updatedFileName, AUTHENTICATED_READ)
+      val url = bucket.url(updatedFileName)
+      val fileContentType = MimeTypes.forFileName(fileName.toLowerCase).getOrElse("application/octet-stream")
+      val seqId = request.user.userSeqId
+      Ok(Json.obj(
+        "shortUrl" -> Destination.create(url, updatedFileName, fileContentType, seqId))
+      )
+    } else {
+    // file streaming failed
       Ok(s"Streaming error occurred: ${result.left.get.errorMessage}")
     }
   }
-
-  var partUploadTickets: Seq[BucketFilePartUploadTicket] = Seq()
-
-  def upload = Action(multipartFormDataAsBytes) { request =>
-    // First get the user
-//    val user: Option[User] = User.find(request.user.identityId)
-
-    // Turns Map(String, Seq[String]) into Map(String, String)
-    val body = request.body.dataParts.map { case (k,Seq(v)) => (k,v) }
-
-    // Map the incoming request to a FlowData object
-    val flowData = FlowData(body.get("flowChunkNumber").get.toLong,
-      body.get("flowChunkSize").get.toLong,
-      body.get("flowCurrentChunkSize").get.toLong,
-      body.get("flowTotalSize").get.toLong,
-      body.get("flowTotalChunks").get.toLong,
-      body.get("flowIdentifier").get,
-      body.get("flowFilename").get)
-
-    // Get the s3 bucket
-    val bucket = S3("pigion")
-
-    // Now we need to figure out if this is the beginning of an upload, an in progress upload, or the end of an upload
-//    val fileName = URLEncoder.encode(request.user.identityId + "/" + flowData.flowFileName, "UTF-8")
-    val fileName = URLEncoder.encode(flowData.flowFileName, "UTF-8")
-    val fileContentType = MimeTypes.forFileName(flowData.flowFileName.toLowerCase).getOrElse("application/octet-stream")
-    val bucketFile = BucketFile(fileName, fileContentType)
-
-    val uploadTicket = await(bucket.initiateMultipartUpload(bucketFile))
-
-    // For each of the file parts, send them to the S3
-    request.body.files foreach {
-      case FilePart(key, filename, contentType, bytes) => {
-        // Upload the data
-        val filePart = BucketFilePart(flowData.flowChunkNumber.toInt, bytes)
-        val partUploadTicket = await(bucket.uploadPart(uploadTicket, filePart))
-        partUploadTickets = Seq(partUploadTicket)
-      }
-    }
-
-    await(bucket completeMultipartUpload (uploadTicket, partUploadTickets))
-
-    // We only want to create a URL from the last one
-    if(flowData.flowChunkNumber == flowData.flowTotalChunks) {
-      val url = bucket.url(fileName)
-//      val seqId = user match {
-//        case Some(u) => u.seqId
-//        case _ => -1
-//      }
-      val seqId = -1
-      Ok(Json.obj(
-        "shortUrl" -> Destination.create(url,flowData.flowFileName, fileContentType, seqId))
-      )
-    } else {
-      Ok
-    }
-   }
-
-  def handleFilePartAsByteArray: PartHandler[FilePart[Array[Byte]]] =
-    handleFilePart {
-      case FileInfo(partName, filename, contentType) =>
-        // simply write the data to the ByteArrayOutputStream
-        Iteratee.fold[Array[Byte], ByteArrayOutputStream](
-          new ByteArrayOutputStream()) { (os, data) =>
-          os.write(data)
-          os
-        }.map { os =>
-          os.close()
-          os.toByteArray
-        }
-    }
-
-  def multipartFormDataAsBytes:play.api.mvc.BodyParser[MultipartFormData[Array[Byte]]] = multipartFormData(handleFilePartAsByteArray)
-
-  def await[T](a: Awaitable[T]): T = Await.result(a, Duration.Inf)
 }
 
