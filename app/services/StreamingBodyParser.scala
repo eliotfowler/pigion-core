@@ -8,6 +8,7 @@ import java.io.OutputStream
 import play.api.Logger
 import play.api.libs.iteratee.{Cont, Done, Input, Iteratee}
 import play.api.libs.concurrent.Execution.Implicits._
+import securesocial.core.SecureSocial
 
 case class StreamingSuccess(filename: String)
 case class StreamingError(errorMessage: String)
@@ -39,11 +40,10 @@ class StreamingBodyParser(streamConstructor: String => Option[OutputStream]) {
         val outputStream: Option[OutputStream] = try {
           streamConstructor(filename)
         } catch {
-          case e: Exception => {
+          case e: Exception =>
             Logger.error(e.getMessage)
             errorMsg = Some(StreamingError(e.getMessage))
             None
-          }
         }
 
         // The fold method that actually does the parsing of the multipart file part.
