@@ -10,6 +10,8 @@ import java.sql.{Date, Timestamp}
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 import fly.play.s3.S3
 import play.api.Logger
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 
 case class Destination(id: Long, userSeqId: Long, originalUrl: String, shortUrlHash: String, fileName:String, contentType: String, expirationTime: DateTime, isExpired: Boolean)
@@ -73,7 +75,8 @@ object Destination {
         'shortUrlHash -> shortUrlHash,
         'fileName -> fileName,
         'contentType -> contentType,
-        'expirationTime -> new Timestamp(DateTime.now().plusMinutes(10).getMillis()),
+      // Changing the expiration time to a week for testing
+        'expirationTime -> new Timestamp(DateTime.now().plusWeeks(1).getMillis()),
         'userSeqId -> seqId
       ).executeUpdate()
     }
@@ -95,8 +98,8 @@ object Destination {
     val expiredDestinations = expired()
     expiredDestinations.foreach(destination => {
 
-      val owner: User = User.find(destination.userSeqId).get
-      val modifiedFileName = owner.identityId + "/" + destination.fileName
+      val owner: User = Await.result(User.find(destination.userSeqId), 10 seconds)
+      val modifiedFileName = owner.userProfile.providerId + "/" + destination.fileName
       Logger.info("modified file name is " + modifiedFileName)
       bucket - modifiedFileName
 //      delete(destination.id)
