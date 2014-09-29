@@ -15,7 +15,7 @@ CREATE TABLE destination (
 );
 
 CREATE SEQUENCE p_user_id_seq;
-CREATE TABLE p_user (
+CREATE TABLE p_user_profile (
   seqId integer NOT NULL DEFAULT nextval('p_user_id_seq'),
   userId text NOT NULL,
   providerId text NOT NULL,
