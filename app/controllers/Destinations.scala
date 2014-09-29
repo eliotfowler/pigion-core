@@ -7,7 +7,7 @@ import play.api.data._
 import play.api.data.Forms._
 import securesocial.core._
 
-object Destinations extends Controller with SecureSocial {
+class Destinations(override implicit val env: RuntimeEnvironment[User]) extends securesocial.core.SecureSocial[User] {
 
   case class UrlData(originalUrl: String)
 
@@ -25,11 +25,7 @@ object Destinations extends Controller with SecureSocial {
 
   def shortenUrl = SecuredAction { implicit request =>
     val originalUrl: String = (request.body.asJson.get \ "originalUrl").asOpt[String].get
-    val user = User.find(request.user.identityId)
-    val userSeqId = user match {
-      case Some(u) => u.seqId
-      case _ => -1
-    }
+    val userSeqId = request.user.userSeqId
     Ok(Json.obj(
       "originalUrl"->originalUrl,
       "shortUrl"->Destination.create(originalUrl, originalUrl, "url", userSeqId)
@@ -37,7 +33,7 @@ object Destinations extends Controller with SecureSocial {
   }
 
   def goToOriginalUrl(key: String) = Action {
-    val destination = Destination.getDestinationForHash(key).getOrElse(null)
+    val destination = Destination.getDestinationForHash(key).orNull
 
     destination match {
       case null => NotFound
