@@ -21,31 +21,31 @@ OPTIONS        /*all                              @controllers.Application.prefl
 # I'm going to try to define my own Securesocial routes
 
 # Login page
-GET            /login                             @securesocial.controllers.LoginPage.login
-GET            /logout                            @securesocial.controllers.LoginPage.logout
+GET            /auth/login                             @securesocial.controllers.LoginPage.login
+GET            /auth/logout                            @securesocial.controllers.LoginPage.logout
 
 # Registration routes
-GET            /signup                            @securesocial.controllers.Registration.startSignUp
-POST           /signup                            @securesocial.controllers.Registration.handleStartSignUp
-GET            /signup/:mailToken                 @securesocial.controllers.Registration.signUp(mailToken)
-POST           /signup/:mailToken                 @securesocial.controllers.Registration.handleSignUp(mailToken)
+GET            /auth/signup                            @securesocial.controllers.Registration.startSignUp
+POST           /auth/signup                            @securesocial.controllers.Registration.handleStartSignUp
+GET            /auth/signup/:mailToken                 @securesocial.controllers.Registration.signUp(mailToken)
+POST           /auth/signup/:mailToken                 @securesocial.controllers.Registration.handleSignUp(mailToken)
 
 # Reset password
-GET            /reset                             @securesocial.controllers.PasswordReset.startResetPassword
-POST           /reset                             @securesocial.controllers.PasswordReset.handleStartResetPassword
-GET            /reset/:mailToken                  @securesocial.controllers.PasswordReset.resetPassword(mailToken)
-POST           /reset/:mailToken                  @securesocial.controllers.PasswordReset.handleResetPassword(mailToken)
+GET            /auth/reset                             @securesocial.controllers.PasswordReset.startResetPassword
+POST           /auth/reset                             @securesocial.controllers.PasswordReset.handleStartResetPassword
+GET            /auth/reset/:mailToken                  @securesocial.controllers.PasswordReset.resetPassword(mailToken)
+POST           /auth/reset/:mailToken                  @securesocial.controllers.PasswordReset.handleResetPassword(mailToken)
 
 # Change Password
-GET            /password                          @securesocial.controllers.PasswordChange.page
-POST           /password                          @securesocial.controllers.PasswordChange.handlePasswordChange
+GET            /auth/password                          @securesocial.controllers.PasswordChange.page
+POST           /auth/password                          @securesocial.controllers.PasswordChange.handlePasswordChange
 
 
 # Authentication entry points for all providers
-GET            /authenticate/:provider            @securesocial.controllers.ProviderController.authenticate(provider, redirectTo: Option[String])
-POST           /authenticate/:provider            @securesocial.controllers.ProviderController.authenticateByPost(provider, redirectTo: Option[String])
+GET            /auth/authenticate/:provider            @securesocial.controllers.ProviderController.authenticate(provider, redirectTo: Option[String])
+POST           /auth/authenticate/:provider            @securesocial.controllers.ProviderController.authenticateByPost(provider, redirectTo: Option[String])
 
-POST           /api/authenticate/:provider        @securesocial.controllers.LoginApi.authenticate(provider, builder = "token")
+POST           /auth/api/authenticate/:provider        @securesocial.controllers.LoginApi.authenticate(provider, builder = "token")
 GET            /assets/securesocial/*file         securesocial.controllers.Assets.at(path="/public/securesocial", file)
 # If it is not defined, it is probably a file stored in pigion
 GET            /$key<[a-zA-Z0-9]+>                @controllers.Destinations.downloadFileWithKey(key)
