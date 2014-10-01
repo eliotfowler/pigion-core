@@ -14,7 +14,9 @@ CREATE TABLE destination (
   isExpired boolean default false,
   isDeleted boolean default false,
   uploadCompleted boolean default false,
-  contentSize integer
+  contentSize integer,
+  numDownloads integer default 0,
+  maxDownloads integer default -1
 );
 
 CREATE SEQUENCE p_user_id_seq;

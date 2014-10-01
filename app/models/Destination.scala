@@ -17,7 +17,7 @@ import scala.concurrent.duration._
 case class Destination(id: Long, userSeqId: Long, originalUrl: String, shortUrlHash: String,
                        fileName:String, contentType: String,
                        expirationTime: DateTime, isExpired: Boolean, isDeleted: Boolean, uploadCompleted: Boolean,
-                       contentSize: Long)
+                       contentSize: Long, numDownloads: Int, maxDownloads: Int)
 
 object Destination {
   val BASE: Int = 62
@@ -39,11 +39,14 @@ object Destination {
     get[Boolean]("isExpired")  ~
     get[Boolean]("isDeleted")  ~
     get[Boolean]("uploadCompleted")  ~
-    get[Long]("contentSize") map {
+    get[Long]("contentSize")   ~
+      get[Int]("numDownloads")  ~
+      get[Int]("maxDownloads") map {
       case id ~ userSeqId ~ originalUrl ~ shortUrlHash ~ fileName ~
-        contentType ~ expirationTime ~ isExpired ~ isDeleted ~ uploadCompleted ~ contentSize =>
+        contentType ~ expirationTime ~ isExpired ~ isDeleted ~
+        uploadCompleted ~ contentSize ~ numDownloads ~ maxDownloads =>
         Destination(id, userSeqId, originalUrl, shortUrlHash, fileName,
-          contentType, expirationTime, isExpired, isDeleted, uploadCompleted, contentSize)
+          contentType, expirationTime, isExpired, isDeleted, uploadCompleted, contentSize, numDownloads, maxDownloads)
     }
   }
 
@@ -68,7 +71,9 @@ object Destination {
       "contentType" -> destination.contentType,
       "expirationTime" -> destination.expirationTime,
       "isExpired" -> destination.isExpired,
-      "contentSize" -> destination.contentSize
+      "contentSize" -> destination.contentSize,
+      "numDownloads" -> destination.numDownloads,
+      "maxDownloads" -> destination.maxDownloads
     )
   }
 
@@ -92,6 +97,13 @@ object Destination {
       ).executeUpdate()
     }
     shortUrlHash
+  }
+
+  def incrementDownloadCount(key: String) = DB.withConnection { implicit c =>
+    SQL("UPDATE destination SET numDownloads = numDownloads + 1 WHERE shortUrlHash = {key}")
+      .on(
+        'key -> key
+      ).executeUpdate()
   }
 
   def delete(id: Long) = DB.withConnection { implicit c =>
