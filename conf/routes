@@ -3,21 +3,23 @@
 # ~~~~
 
 # Home page
-GET         /app/                       @controllers.Application.index
-POST        /url/shorten                @controllers.Destinations.shortenUrl
-POST        /files/upload               @controllers.Files.upload
-GET         /files                      @controllers.Destinations.all
+GET            /app/                          @controllers.Application.index
+POST           /url/shorten                   @controllers.Destinations.shortenUrl
+POST           /files/upload                  @controllers.Files.upload
+GET            /files                         @controllers.Destinations.all
 
 # Static pages
-GET         /                           @controllers.Application.landing
+GET            /                              @controllers.Application.landing
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file               controllers.Assets.at(path="/public", file)
+GET            /assets/*file                  controllers.Assets.at(path="/public", file)
+
+
+GET            /key/$key<[a-zA-Z0-9]+>        @controllers.Destinations.getFileInfoForKey(key)
+#GET         /$key<[a-zA-Z0-9]+>         @controllers.Destinations.goToOriginalUrl(key)
+OPTIONS        /*all                          @controllers.Application.preflight(all)
+->             /auth                          securesocial.Routes
 
 # If it is not defined, it is probably a file stored in pigion
-GET         /key/$key<[a-zA-Z0-9]+>     @controllers.Destinations.getFileInfoForKey(key)
-GET         /$key<[a-zA-Z0-9]+>         @controllers.Destinations.goToOriginalUrl(key)
-OPTIONS     /*all                       @controllers.Application.preflight(all)
-->          /auth                       securesocial.Routes
-
+GET            /$key<[a-zA-Z0-9]+>            @controllers.Destinations.downloadFileWithKey(key)
 
