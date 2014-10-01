@@ -14,7 +14,10 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 
 
-case class Destination(id: Long, userSeqId: Long, originalUrl: String, shortUrlHash: String, fileName:String, contentType: String, expirationTime: DateTime, isExpired: Boolean)
+case class Destination(id: Long, userSeqId: Long, originalUrl: String, shortUrlHash: String,
+                       fileName:String, contentType: String,
+                       expirationTime: DateTime, isExpired: Boolean, isDeleted: Boolean, uploadCompleted: Boolean,
+                       contentSize: Long)
 
 object Destination {
   val BASE: Int = 62
@@ -33,9 +36,14 @@ object Destination {
     get[String]("fileName") ~
     get[String]("contentType") ~
     get[DateTime]("expirationTime") ~
-    get[Boolean]("isExpired") map {
-      case id ~ userSeqId ~ originalUrl ~ shortUrlHash ~ fileName ~ contentType ~ expirationTime ~ isExpired =>
-        Destination(id, userSeqId, originalUrl, shortUrlHash, fileName, contentType, expirationTime, isExpired)
+    get[Boolean]("isExpired")  ~
+    get[Boolean]("isDeleted")  ~
+    get[Boolean]("uploadCompleted")  ~
+    get[Long]("contentSize") map {
+      case id ~ userSeqId ~ originalUrl ~ shortUrlHash ~ fileName ~
+        contentType ~ expirationTime ~ isExpired ~ isDeleted ~ uploadCompleted ~ contentSize =>
+        Destination(id, userSeqId, originalUrl, shortUrlHash, fileName,
+          contentType, expirationTime, isExpired, isDeleted, uploadCompleted, contentSize)
     }
   }
 
@@ -54,11 +62,13 @@ object Destination {
   implicit val locationWrites = new Writes[Destination] {
     def writes(destination: Destination) = Json.obj(
       "id" -> destination.id,
+      "fullUrl" -> destination.originalUrl,
       "shortUrlHash" -> destination.shortUrlHash,
       "fileName" -> destination.fileName,
       "contentType" -> destination.contentType,
       "expirationTime" -> destination.expirationTime,
-      "isExpired" -> destination.isExpired
+      "isExpired" -> destination.isExpired,
+      "contentSize" -> destination.contentSize
     )
   }
 
@@ -66,18 +76,19 @@ object Destination {
     SQL("SELECT * FROM destination").as(destination *)
   }
 
-  def create(originalUrl: String, fileName: String, contentType: String, seqId: Long): String = {
+  def create(originalUrl: String, fileName: String, contentType: String, seqId: Long, contentSize: Long): String = {
     val shortUrlHash: String = dehydrate(getNextId())
     DB.withConnection { implicit c =>
-      SQL("INSERT INTO destination (originalUrl, shortUrlHash, fileName, contentType, expirationTime, isExpired, userSeqId) " +
-        "values ({originalUrl}, {shortUrlHash}, {fileName}, {contentType}, {expirationTime}, false, {userSeqId})").on(
+      SQL("INSERT INTO destination (originalUrl, shortUrlHash, fileName, contentType, expirationTime, isExpired, userSeqId, isDeleted, uploadCompleted, contentSize ) " +
+        "values ({originalUrl}, {shortUrlHash}, {fileName}, {contentType}, {expirationTime}, false, {userSeqId}, false, true, {contentSize})").on(
         'originalUrl -> originalUrl,
         'shortUrlHash -> shortUrlHash,
         'fileName -> fileName,
         'contentType -> contentType,
       // Changing the expiration time to a week for testing
         'expirationTime -> new Timestamp(DateTime.now().plusWeeks(1).getMillis()),
-        'userSeqId -> seqId
+        'userSeqId -> seqId,
+        'contentSize -> contentSize
       ).executeUpdate()
     }
     shortUrlHash

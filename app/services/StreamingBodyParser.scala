@@ -60,7 +60,7 @@ class StreamingBodyParser(streamConstructor: String => Option[OutputStream]) {
               }
             }
           }
-          (Cont[E, A](i => step(state)(i)))
+          Cont[E, A](i => step(state)(i))
         }
 
         fold[Array[Byte], Option[OutputStream]](outputStream) { (os, data) =>

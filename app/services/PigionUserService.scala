@@ -11,7 +11,7 @@ import anorm.~
 import securesocial.core.providers.MailToken
 import org.joda.time.DateTime
 import play.api.Play.current
-import models.User
+import models.{UserUsage, UserLevel, User}
 import securesocial.core.services.{SaveMode, UserService}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -39,7 +39,7 @@ class PigionUserService extends UserService[User] {
       case _ => None
     }
 
-  val user = {
+  val user: RowParser[User] = {
     get[Long]("seqId") ~
       get[String]("userId") ~
       get[String]("providerId") ~
@@ -57,16 +57,27 @@ class PigionUserService extends UserService[User] {
       get[Option[String]]("oAuth2RefreshToken") ~
       get[Option[String]]("passwordHasher") ~
       get[Option[String]]("password") ~
-      get[Option[String]]("passwordSalt") map {
+      get[Option[String]]("passwordSalt") ~
+      get[Long]("userLevelSeqId") ~
+      get[Long]("maxActiveUploads")~
+      get[Long]("maxActiveUploadBytes") map {
       case seqId ~ userId ~ providerId ~ firstName ~ lastName ~ fullName ~ email ~ avatarUrl ~
         authenticationMethod ~ oAuth1Token ~ oAuth1Secret ~ oAuth2AccessToken ~ oAuth2TokenType ~
-        oAuth2ExpiresIn ~ oAuth2RefreshToken ~ passwordHasher ~ password ~ passwordSalt =>
+        oAuth2ExpiresIn ~ oAuth2RefreshToken ~ passwordHasher ~ password ~ passwordSalt ~
+        userLevelSeqId ~ maxActiveDownloads ~ maxActiveUploadBytes =>
         User(seqId, BasicProfile(providerId, userId, firstName, lastName, fullName, email, avatarUrl, AuthenticationMethod(authenticationMethod),
-          (oAuth1Token, oAuth1Secret), (oAuth2AccessToken, oAuth2TokenType, oAuth2ExpiresIn, oAuth2RefreshToken),
-          (passwordHasher, password, passwordSalt)))
+          Option(OAuth1Info(oAuth1Token.getOrElse(""), oAuth1Secret.getOrElse(""))), Option(OAuth2Info(oAuth2AccessToken.getOrElse(""), oAuth2TokenType, oAuth2ExpiresIn, oAuth2RefreshToken)),
+          Option(PasswordInfo(passwordHasher.getOrElse(""), password.getOrElse(""), passwordSalt))), UserLevel(userLevelSeqId, maxActiveDownloads, maxActiveUploadBytes))
     }
   }
 
+  val userUsage: RowParser[UserUsage] = {
+    get[Option[Long]]("currentActiveUploads") ~
+    get[Option[Long]]("currentActiveUploadBytes") map {
+      case currentActiveUploads ~ currentActiveUploadBytes =>
+        UserUsage(currentActiveUploads, currentActiveUploadBytes)
+    }
+  }
 
   val mailToken: RowParser[MailToken] = {
     get[String]("uuid") ~
@@ -91,13 +102,12 @@ class PigionUserService extends UserService[User] {
     }
   }
 
-
-
-
-
+  // User Find Methods
   def find(providerId: String, userId: String): Future[Option[BasicProfile]] = {
     val foundUser: Option[User] = DB.withConnection { implicit c =>
-      SQL("SELECT * FROM p_user_profile WHERE userId={userId} AND providerId={providerId}")
+      SQL("SELECT * " +
+          "FROM p_user_profile LEFT JOIN p_user_level " +
+          "ON p_user_profile.seqId = p_user_level.userSeqId WHERE userId={userId} AND providerId={providerId}")
         .on(
           'userId -> userId,
           'providerId -> providerId
@@ -112,9 +122,25 @@ class PigionUserService extends UserService[User] {
     Future.successful(internalObj)
   }
 
+  def findUser(providerId: String, userId: String): Future[Option[User]] = {
+    val foundUser: Option[User] = DB.withConnection { implicit c =>
+      SQL("SELECT * " +
+        "FROM p_user_profile LEFT JOIN p_user_level " +
+        "ON p_user_profile.seqId = p_user_level.userSeqId WHERE userId={userId} AND providerId={providerId}")
+        .on(
+          'userId -> userId,
+          'providerId -> providerId
+        ).as(user *).headOption
+    }
+
+    Future.successful(foundUser)
+  }
+
   def findByEmailAndProvider(email: String, providerId: String): Future[Option[BasicProfile]] = {
     val foundUser: Option[User] = DB.withConnection { implicit c =>
-      SQL("SELECT * FROM p_user_profile WHERE email={email} AND providerId={providerId}")
+      SQL("SELECT * " +
+        "FROM p_user_profile LEFT JOIN p_user_level " +
+        "ON p_user_profile.seqId = p_user_level.userSeqId WHERE email={email} AND providerId={providerId}")
         .on(
           'email -> email,
           'providerId -> providerId
@@ -129,6 +155,7 @@ class PigionUserService extends UserService[User] {
     Future.successful(internalObj)
   }
 
+  // Save and link
   def save(user: BasicProfile, mode: SaveMode): Future[User] = {
     mode match {
       case SaveMode.SignUp =>
@@ -153,6 +180,7 @@ class PigionUserService extends UserService[User] {
     Future.successful(current)
   }
 
+  // Token Operations
   def saveToken(token: MailToken): Future[MailToken] = {
     DB.withConnection { implicit c =>
       SQL("INSERT INTO token (uuid, email, creationTime, expirationTime, isSignUp) " +
@@ -197,6 +225,7 @@ class PigionUserService extends UserService[User] {
     }
   }
 
+  // Add / Update User
   def addNewUser(userProfile: BasicProfile): Future[User] = {
     val oAuth1Token: String = userProfile.oAuth1Info match {
       case Some(info) => info.token
@@ -269,7 +298,19 @@ class PigionUserService extends UserService[User] {
         ).executeUpdate()
     }
 
-    Future.successful(User(1, userProfile))
+    val user = Await.result(findUser(userProfile.providerId, userProfile.userId), 10 seconds).get
+
+    // Start the user off with a basic subscription
+    DB.withConnection { implicit c =>
+      SQL("INSERT INTO p_user_level (userSeqId, maxActiveUploads, maxActiveUploadBytes) VALUES " +
+        "({userSeqId}, {maxActiveUploads}, {maxActiveUploadBytes})").on(
+          'userSeqId -> user.userSeqId,
+          'maxActiveUploads -> 10,
+          'maxActiveUploadBytes -> 20 * 1024 * 1024
+        ).executeUpdate()
+    }
+
+    Future.successful(user)
   }
 
   def updateExistingUser(userProfile: BasicProfile, newPasswordInfo: Option[PasswordInfo]): Future[User] = {
@@ -288,17 +329,17 @@ class PigionUserService extends UserService[User] {
     }
 
     val oAuth2TokenType: String = userProfile.oAuth2Info match {
-      case Some(info) => info.tokenType.get
+      case Some(info) => info.tokenType.orNull
       case _ => null
     }
 
     val oAuth2ExpiresIn: Int = userProfile.oAuth2Info match {
-      case Some(info) => info.expiresIn.get
+      case Some(info) => info.expiresIn.getOrElse(0)
       case _ => 0
     }
 
     val oAuth2RefreshToken: String = userProfile.oAuth2Info match {
-      case Some(info) => info.refreshToken.get
+      case Some(info) => info.refreshToken.orNull
       case _ => null
     }
 
@@ -357,9 +398,10 @@ class PigionUserService extends UserService[User] {
         ).executeUpdate()
     }
 
-    Future.successful(User(1, userProfile))
+    Future.successful(Await.result(findUser(userProfile.providerId, userProfile.userId), 10 seconds).get)
   }
 
+  // Password Info
   override def passwordInfoFor(user: User): Future[Option[PasswordInfo]] = {
     val profile: BasicProfile =  Await.result(find(user.userProfile.providerId, user.userProfile.userId), 10 seconds).get
     Future.successful(profile.passwordInfo)
@@ -368,6 +410,19 @@ class PigionUserService extends UserService[User] {
   override def updatePasswordInfo(user: User, info: PasswordInfo): Future[Option[BasicProfile]] = {
     val updatedUser =  Await.result(updateExistingUser(user.userProfile, Option(info)), 10 seconds)
     Future.successful(Option(updatedUser.userProfile))
+  }
+
+  def getUserUsage(user: User): Future[Option[UserUsage]] = {
+    val result = DB.withConnection { implicit c =>
+      SQL("SELECT COALESCE(0,SUM(contentSize)) as currentActiveUploadBytes, COUNT(*) as currentActiveUploads " +
+          "FROM p_user_profile LEFT JOIN destination ON p_user_profile.seqId = destination.userSeqId " +
+          "WHERE destination.isExpired = false AND destination.isDeleted = false AND p_user_profile.seqId = {userSeqId}")
+      .on(
+      'userSeqId -> user.userSeqId
+        ).as(userUsage *).headOption
+    }
+
+    Future.successful(result)
   }
 }
 

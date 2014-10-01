@@ -28,7 +28,7 @@ class Destinations(override implicit val env: RuntimeEnvironment[User]) extends 
     val userSeqId = request.user.userSeqId
     Ok(Json.obj(
       "originalUrl"->originalUrl,
-      "shortUrl"->Destination.create(originalUrl, originalUrl, "url", userSeqId)
+      "shortUrl"->Destination.create(originalUrl, originalUrl, "url", userSeqId, 0)
     ))
   }
 
@@ -40,6 +40,15 @@ class Destinations(override implicit val env: RuntimeEnvironment[User]) extends 
       case d if d.contentType.startsWith("image") => Ok(views.html.imageViewer(destination))
       case d if d.contentType == "url" => Redirect(destination.originalUrl)
       case _ => Ok(views.html.fileDownloader(destination))
+    }
+  }
+
+  def getFileInfoForKey(key: String) = Action {
+    val destination = Destination.getDestinationForHash(key)
+
+    destination match {
+      case Some(d) => Ok(Json.toJson(d))
+      case _ => NotFound
     }
   }
 

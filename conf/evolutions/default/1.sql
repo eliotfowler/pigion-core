@@ -11,7 +11,10 @@ CREATE TABLE destination (
   fileName text NOT NULL,
   contentType text NOT NULL,
   expirationTime timestamp,
-  isExpired boolean default false
+  isExpired boolean default false,
+  isDeleted boolean default false,
+  uploadCompleted boolean default false,
+  contentSize integer
 );
 
 CREATE SEQUENCE p_user_id_seq;
@@ -45,10 +48,23 @@ CREATE TABLE token (
   isSignUp boolean
 );
 
+CREATE SEQUENCE p_user_level_id_seq;
+CREATE TABLE p_user_level (
+  userLevelSeqId integer NOT NULL DEFAULT nextval('p_user_level_id_seq'),
+  userSeqId integer NOT NULL,
+  maxActiveUploads integer,
+  maxActiveUploadBytes integer
+);
+
 # --- !Downs
 
 DROP TABLE destination;
 DROP SEQUENCE destination_id_seq;
 
-DROP TABLE p_user;
+DROP TABLE p_user_profile;
+DROP SEQUENCE p_user_id_seq;
+
+DROP TABLE p_user_level;
+DROP SEQUENCE p_user_level_id_seq;
+
 DROP TABLE token;

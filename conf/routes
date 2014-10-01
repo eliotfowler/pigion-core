@@ -7,7 +7,6 @@ GET         /app/                       @controllers.Application.index
 POST        /url/shorten                @controllers.Destinations.shortenUrl
 POST        /files/upload               @controllers.Files.upload
 GET         /files                      @controllers.Destinations.all
-GET         /testAction                 @controllers.Files.testAction
 
 # Static pages
 GET         /                           @controllers.Application.landing
@@ -16,6 +15,7 @@ GET         /                           @controllers.Application.landing
 GET         /assets/*file               controllers.Assets.at(path="/public", file)
 
 # If it is not defined, it is probably a file stored in pigion
+GET         /key/$key<[a-zA-Z0-9]+>     @controllers.Destinations.getFileInfoForKey(key)
 GET         /$key<[a-zA-Z0-9]+>         @controllers.Destinations.goToOriginalUrl(key)
 OPTIONS     /*all                       @controllers.Application.preflight(all)
 ->          /auth                       securesocial.Routes

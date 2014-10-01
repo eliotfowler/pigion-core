@@ -8,8 +8,11 @@ import securesocial.core._
 
 import scala.concurrent.Future
 
+case class UserLevel(userLevelSeqId: Long, maxActiveUploads: Long, maxActiveUploadBytes: Long)
 
-case class User(userSeqId: Long, userProfile: BasicProfile)
+case class User(userSeqId: Long, userProfile: BasicProfile, userLevel: UserLevel)
+
+case class UserUsage(currentActiveUploads: Option[Long], currentActiveUploadBytes: Option[Long])
 
   object User {
     val user = {
@@ -31,13 +34,16 @@ case class User(userSeqId: Long, userProfile: BasicProfile)
       get[Option[String]]("passwordHasher") ~
       get[Option[String]]("password") ~
       get[Option[String]]("passwordSalt") ~
-      get[Boolean]("isAdmin") map {
+      get[Long]("userLevelSeqId") ~
+        get[Long]("maxActiveUploads")~
+        get[Long]("maxActiveUploadedBytes") map {
         case seqId ~ userId ~ providerId ~ firstName ~ lastName ~ fullName ~ email ~ avatarUrl ~
           authenticationMethod ~ oAuth1Token ~ oAuth1Secret ~ oAuth2AccessToken ~ oAuth2TokenType ~
-          oAuth2ExpiresIn ~ oAuth2RefreshToken ~ passwordHasher ~ password ~ passwordSalt ~ isAdmin =>
+          oAuth2ExpiresIn ~ oAuth2RefreshToken ~ passwordHasher ~ password ~ passwordSalt ~
+          userLevelSeqId ~ maxActiveUploads ~ maxActiveUploadedBytes =>
           User(seqId, BasicProfile(providerId, userId, firstName, lastName, fullName, email, avatarUrl, AuthenticationMethod(authenticationMethod),
             Option(OAuth1Info(oAuth1Token.get, oAuth1Secret.get)), Option(OAuth2Info(oAuth2AccessToken.get, oAuth2TokenType, oAuth2ExpiresIn, oAuth2RefreshToken)),
-            Option(PasswordInfo(passwordHasher.get, password.get, passwordSalt))))
+            Option(PasswordInfo(passwordHasher.get, password.get, passwordSalt))), UserLevel(userLevelSeqId, maxActiveUploads, maxActiveUploadedBytes))
       }
     }
 
