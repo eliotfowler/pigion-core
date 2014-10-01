@@ -58,16 +58,16 @@ class PigionUserService extends UserService[User] {
       get[Option[String]]("passwordHasher") ~
       get[Option[String]]("password") ~
       get[Option[String]]("passwordSalt") ~
-      get[Long]("userLevelSeqId") ~
-      get[Long]("maxActiveUploads")~
-      get[Long]("maxActiveUploadBytes") map {
+      get[Option[Long]]("userLevelSeqId") ~
+      get[Option[Long]]("maxActiveUploads")~
+      get[Option[Long]]("maxActiveUploadBytes") map {
       case seqId ~ userId ~ providerId ~ firstName ~ lastName ~ fullName ~ email ~ avatarUrl ~
         authenticationMethod ~ oAuth1Token ~ oAuth1Secret ~ oAuth2AccessToken ~ oAuth2TokenType ~
         oAuth2ExpiresIn ~ oAuth2RefreshToken ~ passwordHasher ~ password ~ passwordSalt ~
         userLevelSeqId ~ maxActiveDownloads ~ maxActiveUploadBytes =>
         User(seqId, BasicProfile(providerId, userId, firstName, lastName, fullName, email, avatarUrl, AuthenticationMethod(authenticationMethod),
           Option(OAuth1Info(oAuth1Token.getOrElse(""), oAuth1Secret.getOrElse(""))), Option(OAuth2Info(oAuth2AccessToken.getOrElse(""), oAuth2TokenType, oAuth2ExpiresIn, oAuth2RefreshToken)),
-          Option(PasswordInfo(passwordHasher.getOrElse(""), password.getOrElse(""), passwordSalt))), UserLevel(userLevelSeqId, maxActiveDownloads, maxActiveUploadBytes))
+          Option(PasswordInfo(passwordHasher.getOrElse(""), password.getOrElse(""), passwordSalt))), UserLevel(userLevelSeqId.getOrElse(-1), maxActiveDownloads.getOrElse(-1), maxActiveUploadBytes.getOrElse(-1)))
     }
   }
 
