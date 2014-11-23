@@ -5,7 +5,7 @@ import models.{Destination, MultipartUploadHandler, User}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.MimeTypes
-import play.api.libs.iteratee.Done
+import play.api.libs.iteratee.{Iteratee, Done}
 import play.api.libs.json.Json
 import play.api.mvc._
 import securesocial.core.java.SecuredAction
@@ -70,6 +70,8 @@ class Files(override implicit val env: RuntimeEnvironment[User]) extends secures
       invokeSecuredBlock(authorize, request, validateFile(block))
     }
   }
+
+
 
   def streamConstructor(filename: String) = {
     Option(new MultipartUploadHandler(filename))

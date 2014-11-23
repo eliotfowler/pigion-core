@@ -12,6 +12,7 @@ import fly.play.s3.S3
 import play.api.Logger
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.util.Random
 
 
 case class Destination(id: Long, userSeqId: Long, originalUrl: String, shortUrlHash: String,
@@ -82,7 +83,8 @@ object Destination {
   }
 
   def create(originalUrl: String, fileName: String, contentType: String, seqId: Long, contentSize: Long): String = {
-    val shortUrlHash: String = dehydrate(getNextId())
+//    val shortUrlHash: String = dehydrate(getNextId())
+    val shortUrlHash = generateRandomUnusedHash()
     DB.withConnection { implicit c =>
       SQL("INSERT INTO destination (originalUrl, shortUrlHash, fileName, contentType, expirationTime, isExpired, userSeqId, isDeleted, uploadCompleted, contentSize ) " +
         "values ({originalUrl}, {shortUrlHash}, {fileName}, {contentType}, {expirationTime}, false, {userSeqId}, false, true, {contentSize})").on(
@@ -131,16 +133,24 @@ object Destination {
 
   def getUrlForHash(hash: String): String = {
     DB.withConnection { implicit c =>
-      SQL("SELECT originalUrl FROM destination WHERE id={id}").on(
-        'id -> saturate(hash)
+      SQL("SELECT originalUrl FROM destination WHERE shortUrlHash={shortUrlHash}").on(
+        'shortUrlHash -> hash
       ).as(scalar[String].single)
     }
   }
 
-  def getDestinationForHash(hash: String): Option[Destination] = {
+//  def getDestinationForHash(hash: String): Option[Destination] = {
+//    DB.withConnection { implicit c =>
+//      SQL("SELECT * FROM destination WHERE id={id}").on(
+//        'id -> saturate(hash)
+//      ).as(destination *).headOption
+//    }
+//  }
+
+  def getDestinationForNonIncrementingHash(hash: String): Option[Destination] = {
     DB.withConnection { implicit c =>
-      SQL("SELECT * FROM destination WHERE id={id}").on(
-        'id -> saturate(hash)
+      SQL("SELECT * FROM destination WHERE shortUrlHash={shortUrlHash}").on(
+        'shortUrlHash -> hash
       ).as(destination *).headOption
     }
   }
@@ -152,19 +162,49 @@ object Destination {
   }
 
   // Take a url hash and figure out what it's id in the database is
-  def saturate(key: String): Int = {
-    key.foldLeft(0)((r,c) => r + ALPHABET.indexOf(c) * math.pow(ALPHABET.size, key.size - key.indexOf(c) - 1).toInt)
+//  def saturate(key: String): Int = {
+//    key.foldLeft(0)((r,c) => r + ALPHABET.indexOf(c) * math.pow(ALPHABET.size, key.size - key.indexOf(c) - 1).toInt)
+//  }
+//
+//  // Given the next id in the sequence for this table,
+//  // generate the url hash
+//  def dehydrate(id: Long): String = {
+//    _dehydrate(id, List[Long]()).map(x => ALPHABET.charAt(x.toInt)).mkString
+//  }
+//
+//  def _dehydrate(id:Long, digits:List[Long]): List[Long] = {
+//    val remainder = id % BASE
+//    if(id < BASE) remainder +: digits
+//    else _dehydrate(id/BASE, remainder +: digits)
+//  }
+
+  // Since we don't want the URL to be incrementing or even to be discrnable that one is in
+  // fact "greater" than another, let's just keep generating random strings of 8 characters
+  // until we find on that has not been used yet
+  def generateRandomUnusedHash(): String = {
+    // First generate the hash
+      val newHash: String = generateRandomHash
+      // Make sure it is unused
+      val originalUrl = DB.withConnection { implicit c =>
+        SQL("SELECT originalUrl FROM destination WHERE shortUrlHash={shortUrlHash}").on(
+          'shortUrlHash -> newHash
+        ).as(scalar[String].singleOpt)
+      }
+      if(originalUrl.isEmpty) {
+        newHash
+      } else {
+        generateRandomUnusedHash()
+      }
   }
 
-  // Given the next id in the sequence for this table,
-  // generate the url hash
-  def dehydrate(id: Long): String = {
-    _dehydrate(id, List[Long]()).map(x => ALPHABET.charAt(x.toInt)).mkString
+  def generateRandomHash(): String = {
+    var hashString = ""
+    while(hashString.length < 8) {
+      val idx = Random.nextInt(62)
+      hashString = hashString + ALPHABET.charAt(idx)
+    }
+
+    hashString
   }
 
-  def _dehydrate(id:Long, digits:List[Long]): List[Long] = {
-    val remainder = id % BASE
-    if(id < BASE) remainder +: digits
-    else _dehydrate(id/BASE, remainder +: digits)
-  }
 }

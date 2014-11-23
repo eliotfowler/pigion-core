@@ -33,7 +33,7 @@ class Destinations(override implicit val env: RuntimeEnvironment[User]) extends 
   }
 
   def goToOriginalUrl(key: String) = Action {
-    val destination = Destination.getDestinationForHash(key).orNull
+    val destination = Destination.getDestinationForNonIncrementingHash(key).orNull
 
     destination match {
       case null => NotFound
@@ -44,7 +44,7 @@ class Destinations(override implicit val env: RuntimeEnvironment[User]) extends 
   }
 
   def downloadFileWithKey(key: String) = Action {
-    val destination = Destination.getDestinationForHash(key)
+    val destination = Destination.getDestinationForNonIncrementingHash(key)
     destination match {
       case Some(d) =>
         if(d.maxDownloads == -1 || d.numDownloads < d.maxDownloads) {
@@ -60,7 +60,7 @@ class Destinations(override implicit val env: RuntimeEnvironment[User]) extends 
   }
 
   def getFileInfoForKey(key: String) = Action {
-    val destination = Destination.getDestinationForHash(key)
+    val destination = Destination.getDestinationForNonIncrementingHash(key)
 
     destination match {
       case Some(d) => Ok(Json.toJson(d))
