@@ -1,11 +1,17 @@
 package controllers
 
+import _root_.java.io.File
+import _root_.java.net.URL
+
+import play.api.libs.iteratee.Enumerator
 import play.api.mvc._
 import models.{User, Destination}
 import play.api.libs.json._
 import play.api.data._
 import play.api.data.Forms._
 import securesocial.core._
+import scala.concurrent.ExecutionContext
+import ExecutionContext.Implicits.global
 
 class Destinations(override implicit val env: RuntimeEnvironment[User]) extends securesocial.core.SecureSocial[User] {
 
@@ -43,13 +49,19 @@ class Destinations(override implicit val env: RuntimeEnvironment[User]) extends 
     }
   }
 
-  def downloadFileWithKey(key: String) = Action {
+  def downloadFileWithKey(key: String, fileName: String) = Action {
     val destination = Destination.getDestinationForNonIncrementingHash(key)
     destination match {
       case Some(d) =>
         if(d.maxDownloads == -1 || d.numDownloads < d.maxDownloads) {
           Destination.incrementDownloadCount(key)
-          Redirect(destination.get.originalUrl, 303)
+          val url = new URL(d.originalUrl)
+          val dataContent: Enumerator[Array[Byte]] = Enumerator.fromStream(url.openStream())
+          Ok.chunked(dataContent).withHeaders(
+            "Content-Disposition" -> "attachment",
+            "Content-Type" -> d.contentType,
+            "Content-Size" -> d.contentSize.toString
+          )
         } else {
           Gone
         }

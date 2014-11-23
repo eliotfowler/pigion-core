@@ -3,20 +3,21 @@
 # ~~~~
 
 # Home page
-GET            /app/                              @controllers.Application.index
-POST           /url/shorten                       @controllers.Destinations.shortenUrl
-POST           /files/upload                      @controllers.Files.upload
-GET            /files                             @controllers.Destinations.all
+GET            /app/                                   @controllers.Application.index
+POST           /url/shorten                            @controllers.Destinations.shortenUrl
+POST           /files/upload                           @controllers.Files.upload
+GET            /files                                  @controllers.Destinations.all
+GET            /download/$hash<[a-zA-Z0-9]+>/:fileName @controllers.Destinations.downloadFileWithKey(hash, fileName)
 
 # Static pages
-GET            /                                  @controllers.Application.landing
+GET            /                                       @controllers.Application.landing
 
 # Map static resources from the /public folder to the /assets URL path
-GET            /assets/*file                      controllers.Assets.at(path="/public", file)
+GET            /assets/*file                           controllers.Assets.at(path="/public", file)
 
-GET            /key/$key<[a-zA-Z0-9]+>            @controllers.Destinations.getFileInfoForKey(key)
+GET            /key/$key<[a-zA-Z0-9]+>                 @controllers.Destinations.getFileInfoForKey(key)
 #GET             /$key<[a-zA-Z0-9]+>             @controllers.Destinations.goToOriginalUrl(key)
-OPTIONS        /*all                              @controllers.Application.preflight(all)
+OPTIONS        /*all                                   @controllers.Application.preflight(all)
 
 # I'm going to try to define my own Securesocial routes
 
@@ -46,8 +47,6 @@ GET            /auth/authenticate/:provider            @securesocial.controllers
 POST           /auth/authenticate/:provider            @securesocial.controllers.ProviderController.authenticateByPost(provider, redirectTo: Option[String])
 
 POST           /auth/api/authenticate/:provider        @securesocial.controllers.LoginApi.authenticate(provider, builder = "token")
-GET            /assets/securesocial/*file         securesocial.controllers.Assets.at(path="/public/securesocial", file)
-# If it is not defined, it is probably a file stored in pigion
-GET            /$key<[a-zA-Z0-9]+>                @controllers.Destinations.downloadFileWithKey(key)
+GET            /assets/securesocial/*file              securesocial.controllers.Assets.at(path="/public/securesocial", file)
 
 
