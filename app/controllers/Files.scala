@@ -73,8 +73,6 @@ class Files(override implicit val env: RuntimeEnvironment[User]) extends secures
 
   def upload = HasEnoughSpace {
     SecuredAction(streamingBodyParser(streamConstructor)) { request =>
-      //    val params = request.body.asFormUrlEncoded // you can extract request parameters for whatever your app needs
-
         val result = request.body.files(0).ref
         if (result.isRight) {
           // streaming succeeded
@@ -82,7 +80,6 @@ class Files(override implicit val env: RuntimeEnvironment[User]) extends secures
           val dateUploaded = new DateTime()
           val bucket = S3("pigion")
           val updatedFileName = request.user.userProfile.userId + "/" + dateUploaded.getMillis + "/" + fileName;
-          // TODO: Check this
           bucket rename(fileName, updatedFileName, PUBLIC_READ)
           val url = bucket.url(updatedFileName)
           val fileContentType = MimeTypes.forFileName(fileName.toLowerCase).getOrElse("application/octet-stream")
@@ -113,6 +110,27 @@ class Files(override implicit val env: RuntimeEnvironment[User]) extends secures
       case _ => NotFound
     }
   }
+
+  def setMaxDownloads(fileId: Long, maxDownloads: Int) = SecuredAction { implicit request =>
+    val destination: Option[Destination] = Destination.getFileById(fileId.toInt)
+
+    destination match {
+      case Some(d) => {
+        if(d.userSeqId != request.user.userSeqId) {
+          BadRequest(s"You don't own this file.")
+        }
+
+        if(d.numDownloads >= maxDownloads) {
+          BadRequest(s"Max downloads already reached.")
+        } else {
+          Destination.setMaxDownloadsForDestination(fileId, maxDownloads)
+          Ok
+        }
+      }
+      case _ => NotFound
+    }
+  }
+
   def expireFile(fileId: Int) = SecuredAction { implicit request =>
     val destination = Destination.getFileById(fileId)
     destination match {

@@ -233,7 +233,7 @@ object Destination {
     }
   }
 
-  def getNextId(): Long = {
+  def getNextId: Long = {
     DB.withConnection { implicit c =>
       SQL("SELECT nextval('destination_id_seq')").as(scalar[Long].single) + 1
     }
@@ -257,6 +257,14 @@ object Destination {
         case _ => false
       }
     }
+  }
+
+  def setMaxDownloadsForDestination(id: Long, maxDownloads: Long) = DB.withConnection { implicit c =>
+    SQL("UPDATE destination SET maxDownloads={maxDownloads} WHERE id = {id}")
+      .on(
+        'maxDownloads -> maxDownloads,
+        'id -> id
+      ).executeUpdate()
   }
 
   // Since we don't want the URL to be incrementing or even to be discrnable that one is in

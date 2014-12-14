@@ -6,10 +6,11 @@
 GET            /app/                                          @controllers.Application.index
 POST           /url/shorten                                   @controllers.Destinations.shortenUrl
 POST           /files/upload                                  @controllers.Files.upload
-GET            /files                                         @controllers.Destinations.all
+GET            /files                                         @controllers.Destinations.currentFilesForUser
 GET            /download/$hash<[a-zA-Z0-9]+>/:fileName        @controllers.Destinations.downloadFileWithKey(hash, fileName, password)
 
-PUT            /files/addPassword/:fileId                     @controllers.Files.addPassword(fileId: Long, password)
+PUT            /files/password/:fileId                        @controllers.Files.addPassword(fileId: Long, password)
+PUT            /files/limit/:fileId                           @controllers.Files.setMaxDownloads(fileId: Long, maxDownloads: Int)
 DELETE         /files/:fileId                                 @controllers.Files.deleteFile(fileId: Int)
 PUT            /files/:fileId/expire                          @controllers.Files.expireFile(fileId: Int)
 
@@ -22,7 +23,6 @@ GET            /                                              @controllers.Appli
 GET            /assets/*file                                  controllers.Assets.at(path="/public", file)
 
 GET            /key/$key<[a-zA-Z0-9]+>                        @controllers.Destinations.getFileInfoForKey(key)
-#GET             /$key<[a-zA-Z0-9]+>             @controllers.Destinations.goToOriginalUrl(key)
 OPTIONS        /*all                                          @controllers.Application.preflight(all)
 
 # I'm going to try to define my own Securesocial routes
