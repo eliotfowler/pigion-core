@@ -113,6 +113,37 @@ class Files(override implicit val env: RuntimeEnvironment[User]) extends secures
       case _ => NotFound
     }
   }
+  def expireFile(fileId: Int) = SecuredAction { implicit request =>
+    val destination = Destination.getFileById(fileId)
+    destination match {
+      case Some(file) => {
+        if(file.userSeqId == request.user.userSeqId) {
+          Destination.expireFile(fileId)
+          Ok
+        } else {
+          BadRequest(s"You don't own this file.")
+        }
+      }
+
+      case _ => NotFound
+    }
+  }
+
+  def deleteFile(fileId: Int) = SecuredAction { implicit request =>
+    val destination = Destination.getFileById(fileId)
+    destination match {
+      case Some(file) => {
+        if(file.userSeqId == request.user.userSeqId) {
+          Destination.deleteFile(fileId)
+          Ok
+        } else {
+          BadRequest(s"You don't own this file.")
+        }
+      }
+
+      case _ => NotFound
+    }
+  }
 }
 
 

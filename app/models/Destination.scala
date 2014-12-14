@@ -161,26 +161,59 @@ object Destination {
       ).executeUpdate()
   }
 
-  def delete(id: Long) = DB.withConnection { implicit c =>
-    SQL("DELETE FROM destination WHERE id = {id}").on(
-      'id -> id
-    ).executeUpdate()
+//  def delete(id: Long) = DB.withConnection { implicit c =>
+//    SQL("DELETE FROM destination WHERE id = {id}").on(
+//      'id -> id
+//    ).executeUpdate()
+//  }
+
+  def markFileAsDeleted(id: Int) = DB.withConnection { implicit c =>
+    SQL("UPDATE destination SET isDeleted=true WHERE id = {id}")
+      .on(
+        'id -> id
+      ).executeUpdate()
   }
 
-  def expired() = DB.withConnection { implicit c =>
+  def deleteFile(id: Int) = {
+    val bucket = S3("pigion")
+    val destination = getFileById(id)
+    destination match {
+      case Some(d) => {
+        val owner: User = Await.result(User.find(d.userSeqId), 10 seconds)
+        val modifiedFileName = owner.userProfile.providerId + "/" + d.fileName
+        bucket - modifiedFileName
+        markFileAsDeleted(id)
+      }
+    }
+  }
+
+  def expireFile(id: Int) = DB.withConnection { implicit c =>
+    SQL("UPDATE destination SET isExpired=true WHERE id = {id}")
+      .on(
+        'id -> id
+      ).executeUpdate()
+  }
+
+  def expired = DB.withConnection { implicit c =>
     SQL("SELECT * FROM destination WHERE isExpired = true").as(destination *)
+  }
+
+  def expiredOverTwoDaysAgo = DB.withConnection { implicit c =>
+    SQL("SELECT * FROM destination WHERE isExpired = true AND expirationTime < {twoDaysAgo}").on(
+      'twoDaysAgo -> new Timestamp(DateTime.now().minusDays(2).getMillis)
+    )
+    .as(destination *)
   }
 
   def removeExpiredFromS3() {
     val bucket = S3("pigion")
-    val expiredDestinations = expired()
+    val expiredDestinations = expiredOverTwoDaysAgo
     expiredDestinations.foreach(destination => {
 
       val owner: User = Await.result(User.find(destination.userSeqId), 10 seconds)
       val modifiedFileName = owner.userProfile.providerId + "/" + destination.fileName
       Logger.info("modified file name is " + modifiedFileName)
       bucket - modifiedFileName
-//      delete(destination.id)
     })
   }
 
