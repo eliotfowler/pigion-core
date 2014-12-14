@@ -2,7 +2,7 @@ import java.lang.reflect.Constructor
 
 import actors.ExpirationActor
 import models.User
-import play.api.mvc.{WithFilters, EssentialFilter, EssentialAction, RequestHeader}
+import play.api.mvc._
 import securesocial.core.RuntimeEnvironment
 import services.PigionUserService
 import scala.concurrent.duration.DurationInt
