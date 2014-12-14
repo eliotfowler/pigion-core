@@ -66,7 +66,7 @@ class StreamingBodyParser(streamConstructor: String => Option[OutputStream]) {
         fold[Array[Byte], Option[OutputStream]](outputStream) { (os, data) =>
           os foreach { _.write(data) }
           os
-        }.mapDone { os =>
+        }.map { os =>
           os foreach { _.close }
           errorMsg match {
             case Some(result) =>

@@ -36,20 +36,20 @@ case class UserUsage(currentActiveUploads: Option[Long], currentActiveUploadByte
       get[Option[String]]("passwordSalt") ~
       get[Long]("userLevelSeqId") ~
         get[Long]("maxActiveUploads")~
-        get[Long]("maxActiveUploadedBytes") map {
+        get[Long]("maxActiveUploadBytes") map {
         case seqId ~ userId ~ providerId ~ firstName ~ lastName ~ fullName ~ email ~ avatarUrl ~
           authenticationMethod ~ oAuth1Token ~ oAuth1Secret ~ oAuth2AccessToken ~ oAuth2TokenType ~
           oAuth2ExpiresIn ~ oAuth2RefreshToken ~ passwordHasher ~ password ~ passwordSalt ~
-          userLevelSeqId ~ maxActiveUploads ~ maxActiveUploadedBytes =>
+          userLevelSeqId ~ maxActiveUploads ~ maxActiveUploadBytes =>
           User(seqId, BasicProfile(providerId, userId, firstName, lastName, fullName, email, avatarUrl, AuthenticationMethod(authenticationMethod),
             Option(OAuth1Info(oAuth1Token.get, oAuth1Secret.get)), Option(OAuth2Info(oAuth2AccessToken.get, oAuth2TokenType, oAuth2ExpiresIn, oAuth2RefreshToken)),
-            Option(PasswordInfo(passwordHasher.get, password.get, passwordSalt))), UserLevel(userLevelSeqId, maxActiveUploads, maxActiveUploadedBytes))
+            Option(PasswordInfo(passwordHasher.get, password.get, passwordSalt))), UserLevel(userLevelSeqId, maxActiveUploads, maxActiveUploadBytes))
       }
     }
 
     def find(seqId: Long): Future[User] = {
       val result = DB.withConnection { implicit c =>
-        SQL("SELECT * FROM p_user_profile WHERE seqId = {seqId}")
+        SQL("SELECT * FROM p_user_profile JOIN p_user_level ON p_user_profile.seqId = p_user_level.userSeqId WHERE seqId = {seqId}")
           .on('seqId -> seqId).as(user *).headOption
       }
 
