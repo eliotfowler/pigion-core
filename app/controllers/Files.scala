@@ -52,6 +52,7 @@ class Files(override implicit val env: RuntimeEnvironment[User]) extends secures
             } else {
               false
             }
+          case _ => false
         }
       }
       case _  => {
