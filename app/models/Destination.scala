@@ -2,6 +2,7 @@ package models
 
 import anorm._
 import anorm.SqlParser._
+import org.mindrot.jbcrypt.BCrypt
 import play.api.db.DB
 import play.api.Play.current
 import play.api.libs.json.{Writes, Json}
@@ -18,7 +19,7 @@ import scala.util.Random
 case class Destination(id: Long, userSeqId: Long, originalUrl: String, shortUrlHash: String,
                        fileName:String, contentType: String,
                        expirationTime: DateTime, isExpired: Boolean, isDeleted: Boolean, uploadCompleted: Boolean,
-                       contentSize: Long, numDownloads: Int, maxDownloads: Int)
+                       contentSize: Long, numDownloads: Int, maxDownloads: Int, password: Option[String])
 
 object Destination {
   val BASE: Int = 62
@@ -41,13 +42,15 @@ object Destination {
     get[Boolean]("isDeleted")  ~
     get[Boolean]("uploadCompleted")  ~
     get[Long]("contentSize")   ~
-      get[Int]("numDownloads")  ~
-      get[Int]("maxDownloads") map {
+    get[Int]("numDownloads")  ~
+    get[Int]("maxDownloads") ~
+    get[Option[String]]("password") map {
       case id ~ userSeqId ~ originalUrl ~ shortUrlHash ~ fileName ~
         contentType ~ expirationTime ~ isExpired ~ isDeleted ~
-        uploadCompleted ~ contentSize ~ numDownloads ~ maxDownloads =>
+        uploadCompleted ~ contentSize ~ numDownloads ~ maxDownloads ~ password =>
         Destination(id, userSeqId, originalUrl, shortUrlHash, fileName,
-          contentType, expirationTime, isExpired, isDeleted, uploadCompleted, contentSize, numDownloads, maxDownloads)
+          contentType, expirationTime, isExpired, isDeleted, uploadCompleted,
+          contentSize, numDownloads, maxDownloads, password)
     }
   }
 
@@ -100,6 +103,12 @@ object Destination {
     shortUrlHash
   }
 
+  def getFileById(fileId: Int): Option[Destination] = DB.withConnection { implicit c =>
+    SQL("SELECT * FROM destination WHERE id={fileId}").on(
+      'fileId -> fileId
+    ).as(destination *).headOption
+  }
+
   def incrementDownloadCount(key: String) = DB.withConnection { implicit c =>
     SQL("UPDATE destination SET numDownloads = numDownloads + 1 WHERE shortUrlHash = {key}")
       .on(
@@ -149,6 +158,26 @@ object Destination {
   def getNextId(): Long = {
     DB.withConnection { implicit c =>
       SQL("SELECT nextval('destination_id_seq')").as(scalar[Long].single) + 1
+    }
+  }
+
+  // Password
+  def setPasswordForDestination(id: Long, password: String) = DB.withConnection { implicit c =>
+    val encryptedPassword: String = BCrypt.hashpw(password, BCrypt.gensalt())
+    SQL("UPDATE destination SET password={encryptedPassword} WHERE id = {id}")
+      .on(
+        'encryptedPassword -> encryptedPassword,
+        'id -> id
+      ).executeUpdate()
+  }
+
+  def passwordMatchesForDestination(destination: Destination, password: String): Boolean = {
+    if (password == null) false
+    else {
+      destination.password match {
+        case Some(p) => BCrypt.checkpw(password, destination.password.get)
+        case _ => false
+      }
     }
   }
 

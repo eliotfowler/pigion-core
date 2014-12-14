@@ -49,11 +49,13 @@ class Destinations(override implicit val env: RuntimeEnvironment[User]) extends 
     }
   }
 
-  def downloadFileWithKey(key: String, fileName: String) = Action {
+  def downloadFileWithKey(key: String, fileName: String, password: String) = Action {
     val destination = Destination.getDestinationForNonIncrementingHash(key)
     destination match {
       case Some(d) =>
-        if(d.maxDownloads == -1 || d.numDownloads < d.maxDownloads) {
+        if(d.password != null && !Destination.passwordMatchesForDestination(d, password)) {
+          Unauthorized
+        } else if(d.maxDownloads == -1 || d.numDownloads < d.maxDownloads) {
           Destination.incrementDownloadCount(key)
           val url = new URL(d.originalUrl)
           val dataContent: Enumerator[Array[Byte]] = Enumerator.fromStream(url.openStream())
@@ -68,7 +70,6 @@ class Destinations(override implicit val env: RuntimeEnvironment[User]) extends 
 
       case _ => NotFound
     }
-
   }
 
   def getFileInfoForKey(key: String) = Action {

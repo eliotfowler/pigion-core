@@ -16,7 +16,8 @@ CREATE TABLE destination (
   uploadCompleted boolean default false,
   contentSize integer,
   numDownloads integer default 0,
-  maxDownloads integer default -1
+  maxDownloads integer default -1,
+  password varchar(1000)
 );
 
 CREATE SEQUENCE p_user_id_seq;

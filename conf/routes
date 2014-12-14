@@ -3,51 +3,53 @@
 # ~~~~
 
 # Home page
-GET            /app/                                   @controllers.Application.index
-POST           /url/shorten                            @controllers.Destinations.shortenUrl
-POST           /files/upload                           @controllers.Files.upload
-GET            /files                                  @controllers.Destinations.all
-GET            /download/$hash<[a-zA-Z0-9]+>/:fileName @controllers.Destinations.downloadFileWithKey(hash, fileName)
+GET            /app/                                          @controllers.Application.index
+POST           /url/shorten                                   @controllers.Destinations.shortenUrl
+POST           /files/upload                                  @controllers.Files.upload
+GET            /files                                         @controllers.Destinations.all
+GET            /download/$hash<[a-zA-Z0-9]+>/:fileName        @controllers.Destinations.downloadFileWithKey(hash, fileName, password)
+
+PUT            /files/addPassword/:fileId                     @controllers.Files.addPassword(fileId: Long, password)
 
 # Static pages
-GET            /                                       @controllers.Application.landing
+GET            /                                              @controllers.Application.landing
 
 # Map static resources from the /public folder to the /assets URL path
-GET            /assets/*file                           controllers.Assets.at(path="/public", file)
+GET            /assets/*file                                  controllers.Assets.at(path="/public", file)
 
-GET            /key/$key<[a-zA-Z0-9]+>                 @controllers.Destinations.getFileInfoForKey(key)
+GET            /key/$key<[a-zA-Z0-9]+>                        @controllers.Destinations.getFileInfoForKey(key)
 #GET             /$key<[a-zA-Z0-9]+>             @controllers.Destinations.goToOriginalUrl(key)
-OPTIONS        /*all                                   @controllers.Application.preflight(all)
+OPTIONS        /*all                                          @controllers.Application.preflight(all)
 
 # I'm going to try to define my own Securesocial routes
 
 # Login page
-GET            /auth/login                             @securesocial.controllers.LoginPage.login
-GET            /auth/logout                            @securesocial.controllers.LoginPage.logout
+GET            /auth/login                                    @securesocial.controllers.LoginPage.login
+GET            /auth/logout                                   @securesocial.controllers.LoginPage.logout
 
 # Registration routes
-GET            /auth/signup                            @securesocial.controllers.Registration.startSignUp
-POST           /auth/signup                            @securesocial.controllers.Registration.handleStartSignUp
-GET            /auth/signup/:mailToken                 @securesocial.controllers.Registration.signUp(mailToken)
-POST           /auth/signup/:mailToken                 @securesocial.controllers.Registration.handleSignUp(mailToken)
+GET            /auth/signup                                   @securesocial.controllers.Registration.startSignUp
+POST           /auth/signup                                   @securesocial.controllers.Registration.handleStartSignUp
+GET            /auth/signup/:mailToken                        @securesocial.controllers.Registration.signUp(mailToken)
+POST           /auth/signup/:mailToken                        @securesocial.controllers.Registration.handleSignUp(mailToken)
 POST           /auth/signupRemote                             @controllers.Application.handleJsonSignup
 
 # Reset password
-GET            /auth/reset                             @securesocial.controllers.PasswordReset.startResetPassword
-POST           /auth/reset                             @securesocial.controllers.PasswordReset.handleStartResetPassword
-GET            /auth/reset/:mailToken                  @securesocial.controllers.PasswordReset.resetPassword(mailToken)
-POST           /auth/reset/:mailToken                  @securesocial.controllers.PasswordReset.handleResetPassword(mailToken)
+GET            /auth/reset                                    @securesocial.controllers.PasswordReset.startResetPassword
+POST           /auth/reset                                    @securesocial.controllers.PasswordReset.handleStartResetPassword
+GET            /auth/reset/:mailToken                         @securesocial.controllers.PasswordReset.resetPassword(mailToken)
+POST           /auth/reset/:mailToken                         @securesocial.controllers.PasswordReset.handleResetPassword(mailToken)
 
 # Change Password
-GET            /auth/password                          @securesocial.controllers.PasswordChange.page
-POST           /auth/password                          @securesocial.controllers.PasswordChange.handlePasswordChange
+GET            /auth/password                                 @securesocial.controllers.PasswordChange.page
+POST           /auth/password                                 @securesocial.controllers.PasswordChange.handlePasswordChange
 
 
 # Authentication entry points for all providers
-GET            /auth/authenticate/:provider            @securesocial.controllers.ProviderController.authenticate(provider, redirectTo: Option[String])
-POST           /auth/authenticate/:provider            @securesocial.controllers.ProviderController.authenticateByPost(provider, redirectTo: Option[String])
+GET            /auth/authenticate/:provider                   @securesocial.controllers.ProviderController.authenticate(provider, redirectTo: Option[String])
+POST           /auth/authenticate/:provider                   @securesocial.controllers.ProviderController.authenticateByPost(provider, redirectTo: Option[String])
 
-POST           /auth/api/authenticate/:provider        @securesocial.controllers.LoginApi.authenticate(provider, builder = "token")
-GET            /assets/securesocial/*file              securesocial.controllers.Assets.at(path="/public/securesocial", file)
+POST           /auth/api/authenticate/:provider               @securesocial.controllers.LoginApi.authenticate(provider, builder = "token")
+GET            /assets/securesocial/*file                     securesocial.controllers.Assets.at(path="/public/securesocial", file)
 
 

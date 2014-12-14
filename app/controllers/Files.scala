@@ -98,6 +98,20 @@ class Files(override implicit val env: RuntimeEnvironment[User]) extends secures
     } else {
     // file streaming failed
       Ok(s"Streaming error occurred: ${result.left.get.errorMessage}")
+
+
+  def addPassword(fileId: Long, password: String) = SecuredAction { implicit request =>
+    val destination: Option[Destination] = Destination.getFileById(fileId.toInt)
+
+    destination match {
+      case Some(d) => {
+        if(d.userSeqId != request.user.userSeqId) {
+          BadRequest
+        }
+        Destination.setPasswordForDestination(fileId, password)
+        Ok
+      }
+      case _ => NotFound
     }
   }
 }
