@@ -85,6 +85,21 @@ object Destination {
     SQL("SELECT * FROM destination").as(destination *)
   }
 
+  def allForUser(userSeqId: Long): List[Destination] = DB.withConnection { implicit c =>
+    SQL("SELECT * FROM destination WHERE userSeqId = {userSeqId}").on(
+        'userSeqId -> userSeqId
+      )
+      .as(destination *)
+  }
+
+  def currentForUser(userSeqId: Long): List[Destination] = DB.withConnection { implicit c =>
+    SQL("SELECT * FROM destination WHERE (expirationTime > {twoDaysAgo} OR isExpired = false) AND userSeqId = {userSeqId}").on(
+      'userSeqId -> userSeqId,
+      'twoDaysAgo ->  new Timestamp(DateTime.now().minusDays(2).getMillis)
+    )
+      .as(destination *)
+  }
+
   def create(originalUrl: String, fileName: String, contentType: String, seqId: Long, contentSize: Long): String = {
     val shortUrlHash = generateRandomUnusedHash()
     DB.withConnection { implicit c =>

@@ -81,8 +81,14 @@ class Destinations(override implicit val env: RuntimeEnvironment[User]) extends 
     }
   }
 
-  def all = SecuredAction {
-    val list = Json.toJson(Destination.all())
+  def allFilesForUser = SecuredAction { implicit request =>
+    val list = Json.toJson(Destination.allForUser(request.user.userSeqId))
+
+    Ok(list)
+  }
+
+  def currentFilesForUser = SecuredAction { implicit request =>
+    val list = Json.toJson(Destination.currentForUser(request.user.userSeqId))
 
     Ok(list)
   }
