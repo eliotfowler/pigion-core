@@ -118,6 +118,36 @@ object Destination {
     shortUrlHash
   }
 
+  def getNumFilesUploadedForUser(userSeqId: Long): Long = DB.withConnection { implicit c =>
+    SQL("SELECT count(*) FROM destination WHERE userSeqId={userSeqId}").on(
+      'userSeqId -> userSeqId
+    ).as(scalar[Long].single)
+  }
+
+  def getNumCurrentFilesUploadedForUser(userSeqId: Long): Long = DB.withConnection { implicit c =>
+    SQL("SELECT count(*) FROM destination WHERE userSeqId={userSeqId} AND isExpired = false").on(
+      'userSeqId -> userSeqId
+    ).as(scalar[Long].single)
+  }
+
+  def getNumDownloadsFilesByUser(userSeqId: Long): Long = DB.withConnection { implicit c =>
+    SQL("SELECT sum(numDownloads) FROM destination WHERE userSeqId={userSeqId}").on(
+      'userSeqId -> userSeqId
+    ).as(scalar[Long].single)
+  }
+
+  def getTotalSizeUploadedForUser(userSeqId: Long): Long = DB.withConnection { implicit c =>
+    SQL("SELECT sum(contentSize) FROM destination WHERE userSeqId={userSeqId}").on(
+      'userSeqId -> userSeqId
+    ).as(scalar[Long].single)
+  }
+
+  def getCurrentSizeUploadedForUser(userSeqId: Long): Long = DB.withConnection { implicit c =>
+    SQL("SELECT sum(contentSize) FROM destination WHERE userSeqId={userSeqId} AND isExpired = false").on(
+      'userSeqId -> userSeqId
+    ).as(scalar[Long].single)
+  }
+
   def getFileById(fileId: Int): Option[Destination] = DB.withConnection { implicit c =>
     SQL("SELECT * FROM destination WHERE id={fileId}").on(
       'fileId -> fileId

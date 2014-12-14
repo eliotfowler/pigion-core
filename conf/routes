@@ -10,6 +10,7 @@ GET            /files                                         @controllers.Desti
 GET            /download/$hash<[a-zA-Z0-9]+>/:fileName        @controllers.Destinations.downloadFileWithKey(hash, fileName, password)
 
 PUT            /files/addPassword/:fileId                     @controllers.Files.addPassword(fileId: Long, password)
+GET            /users/filesInfo                               @controllers.Users.getFilesInfoForUser
 
 # Static pages
 GET            /                                              @controllers.Application.landing
