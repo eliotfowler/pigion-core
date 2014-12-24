@@ -110,7 +110,7 @@ object Destination {
         'fileName -> fileName,
         'contentType -> contentType,
       // Changing the expiration time to a week for testing
-        'expirationTime -> new Timestamp(DateTime.now().plusWeeks(1).getMillis()),
+        'expirationTime -> new Timestamp(DateTime.now().plusWeeks(1).getMillis),
         'userSeqId -> seqId,
         'contentSize -> contentSize
       ).executeUpdate()
@@ -131,19 +131,19 @@ object Destination {
   }
 
   def getNumDownloadsFilesByUser(userSeqId: Long): Long = DB.withConnection { implicit c =>
-    SQL("SELECT sum(numDownloads) FROM destination WHERE userSeqId={userSeqId}").on(
+    SQL("SELECT coalesce(sum(numDownloads), 0) FROM destination WHERE userSeqId={userSeqId}").on(
       'userSeqId -> userSeqId
     ).as(scalar[Long].single)
   }
 
   def getTotalSizeUploadedForUser(userSeqId: Long): Long = DB.withConnection { implicit c =>
-    SQL("SELECT sum(contentSize) FROM destination WHERE userSeqId={userSeqId}").on(
+    SQL("SELECT coalesce(sum(contentSize), 0) FROM destination WHERE userSeqId={userSeqId}").on(
       'userSeqId -> userSeqId
     ).as(scalar[Long].single)
   }
 
   def getCurrentSizeUploadedForUser(userSeqId: Long): Long = DB.withConnection { implicit c =>
-    SQL("SELECT sum(contentSize) FROM destination WHERE userSeqId={userSeqId} AND isExpired = false").on(
+    SQL("SELECT coalesce(sum(contentSize), 0) FROM destination WHERE userSeqId={userSeqId} AND isExpired = false").on(
       'userSeqId -> userSeqId
     ).as(scalar[Long].single)
   }
@@ -183,6 +183,9 @@ object Destination {
         val modifiedFileName = owner.userProfile.providerId + "/" + d.fileName
         bucket - modifiedFileName
         markFileAsDeleted(id)
+      }
+      case _ => {
+
       }
     }
   }
