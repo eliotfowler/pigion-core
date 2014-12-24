@@ -15,6 +15,7 @@ DELETE         /files/:fileId                                 @controllers.Files
 PUT            /files/:fileId/expire                          @controllers.Files.expireFile(fileId: Int)
 
 GET            /users/filesInfo                               @controllers.Users.getFilesInfoForUser
+GET            /users/info                                    @controllers.Users.getUserInfo
 
 # Static pages
 GET            /                                              @controllers.Application.landing

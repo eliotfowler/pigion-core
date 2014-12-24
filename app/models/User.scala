@@ -5,6 +5,9 @@ import anorm.{~, _}
 import play.api.Play.current
 import play.api.db.DB
 import securesocial.core._
+import play.api.libs.json._
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Writes._
 
 import scala.concurrent.Future
 
@@ -55,4 +58,16 @@ case class UserUsage(currentActiveUploads: Option[Long], currentActiveUploadByte
 
       Future.successful(result.get)
     }
+
+    implicit val userWrites = new Writes[User] {
+      def writes(user: User) = Json.obj(
+        "id" -> user.userSeqId,
+        "firstName" -> user.userProfile.firstName,
+        "lastName" -> user.userProfile.lastName,
+        "fullName" -> user.userProfile.fullName,
+        "email" -> user.userProfile.email,
+        "avatarUrl" -> user.userProfile.avatarUrl
+      )
+    }
+
   }

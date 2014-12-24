@@ -22,4 +22,8 @@ class Users(override implicit val env: RuntimeEnvironment[User]) extends secures
     )
   }
 
+  def getUserInfo = SecuredAction { implicit request =>
+    Ok(Json.toJson(request.user))
+  }
+
 }
