@@ -37,7 +37,7 @@ GET            /auth/signup                                   @securesocial.cont
 POST           /auth/signup                                   @securesocial.controllers.Registration.handleStartSignUp
 GET            /auth/signup/:mailToken                        @securesocial.controllers.Registration.signUp(mailToken)
 POST           /auth/signup/:mailToken                        @securesocial.controllers.Registration.handleSignUp(mailToken)
-POST           /auth/signupRemote                             @controllers.Application.handleJsonSignup
+#POST           /auth/signupRemote                             @controllers.Application.handleJsonSignup
 
 # Reset password
 GET            /auth/reset                                    @securesocial.controllers.PasswordReset.startResetPassword
