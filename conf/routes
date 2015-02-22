@@ -7,7 +7,7 @@ GET            /app/                                          @controllers.Appli
 POST           /url/shorten                                   @controllers.Destinations.shortenUrl
 POST           /files/upload                                  @controllers.Files.upload
 GET            /files                                         @controllers.Destinations.currentFilesForUser
-GET            /download/$hash<[a-zA-Z0-9]+>/:fileName        @controllers.Destinations.downloadFileWithKey(hash, fileName, password)
+GET            /download/$hash<[a-zA-Z0-9]+>/:fileName        @controllers.Destinations.downloadFileWithKey(hash, fileName, password = "")
 
 PUT            /files/password/:fileId                        @controllers.Files.addPassword(fileId: Long, password)
 PUT            /files/limit/:fileId                           @controllers.Files.setMaxDownloads(fileId: Long, maxDownloads: Int)
