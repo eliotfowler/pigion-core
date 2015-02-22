@@ -53,7 +53,7 @@ class Destinations(override implicit val env: RuntimeEnvironment[User]) extends 
     val destination = Destination.getDestinationForNonIncrementingHash(key)
     destination match {
       case Some(d) =>
-        if(d.password != null && !Destination.passwordMatchesForDestination(d, password)) {
+        if(!d.password.nonEmpty &&(!Destination.passwordMatchesForDestination(d, password))) {
           Unauthorized
         } else if(d.maxDownloads == -1 || d.numDownloads < d.maxDownloads) {
           Destination.incrementDownloadCount(key)
