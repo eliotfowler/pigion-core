@@ -13,6 +13,11 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.concurrent.Akka
 import akka.actor.Props
 import play.api.Play.current
+import scala.collection.JavaConverters._
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.iteratee.Iteratee
+import play.api.Play.current
+import play.api.mvc._
 
 class CorsFilter extends EssentialFilter {
   def apply(next: EssentialAction) = new EssentialAction {
@@ -27,7 +32,28 @@ class CorsFilter extends EssentialFilter {
   }
 }
 
-object Global extends WithFilters(new CorsFilter) with GlobalSettings {
+class IPFilter extends EssentialFilter {
+  def apply(nextFilter: EssentialAction) = new EssentialAction {
+    def apply(requestHeader: RequestHeader) = {
+      if(requestHeader.path contains "signupRemote") {
+        // read the IPs as a Scala Seq (converting from the Java list)
+        val ips: Seq[String] = current.configuration.getStringList("pigion.signup-ipwhitelist")
+          .map(_.asScala).getOrElse(Seq.empty)
+
+        // Check we've got an allowed IP, otherwise ignore the
+        // request body and immediately return a forbidden.
+        if (ips.contains(requestHeader.remoteAddress)) nextFilter(requestHeader)
+        else Iteratee.ignore[Array[Byte]]
+          .map(_ => Results.Forbidden(s"Bad IP! ${requestHeader.remoteAddress}"))
+      } else {
+        nextFilter(requestHeader)
+      }
+
+    }
+  }
+}
+
+object Global extends WithFilters(new CorsFilter, new IPFilter) with GlobalSettings {
 
   object MyRuntimeEnvironment extends RuntimeEnvironment.Default[User] {
     override lazy val userService: PigionUserService = new PigionUserService()
