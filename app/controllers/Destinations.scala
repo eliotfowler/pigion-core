@@ -55,6 +55,8 @@ class Destinations(override implicit val env: RuntimeEnvironment[User]) extends 
       case Some(d) =>
         if(d.password.nonEmpty &&(!Destination.passwordMatchesForDestination(d, password))) {
           Unauthorized
+        } else if(d.isExpired) {
+          Gone
         } else if(d.maxDownloads == -1 || d.numDownloads < d.maxDownloads) {
           Destination.incrementDownloadCount(key)
           val url = new URL(d.originalUrl)

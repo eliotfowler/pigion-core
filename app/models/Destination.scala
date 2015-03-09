@@ -100,7 +100,7 @@ object Destination {
       .as(destination *)
   }
 
-  def create(originalUrl: String, fileName: String, contentType: String, seqId: Long, contentSize: Long): String = {
+  def create(originalUrl: String, fileName: String, contentType: String, seqId: Long, contentSize: Long): Option[Destination] = {
     val shortUrlHash = generateRandomUnusedHash()
     DB.withConnection { implicit c =>
       SQL("INSERT INTO destination (originalUrl, shortUrlHash, fileName, contentType, expirationTime, isExpired, userSeqId, isDeleted, uploadCompleted, contentSize ) " +
@@ -115,7 +115,7 @@ object Destination {
         'contentSize -> contentSize
       ).executeUpdate()
     }
-    shortUrlHash
+    getDestinationForNonIncrementingHash(shortUrlHash)
   }
 
   def getNumFilesUploadedForUser(userSeqId: Long): Long = DB.withConnection { implicit c =>
@@ -191,8 +191,9 @@ object Destination {
   }
 
   def expireFile(id: Int) = DB.withConnection { implicit c =>
-    SQL("UPDATE destination SET isExpired=true WHERE id = {id}")
+    SQL("UPDATE destination SET isExpired=true, expirationTime={time} WHERE id = {id}")
       .on(
+        'time -> new Timestamp(DateTime.now().getMillis),
         'id -> id
       ).executeUpdate()
   }

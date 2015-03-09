@@ -84,10 +84,12 @@ class Files(override implicit val env: RuntimeEnvironment[User]) extends secures
           val url = bucket.url(updatedFileName)
           val fileContentType = MimeTypes.forFileName(fileName.toLowerCase).getOrElse("application/octet-stream")
           val seqId = request.user.userSeqId
-          Ok(Json.obj(
-            "shortUrl" -> Destination.create(url, updatedFileName, fileContentType, seqId,
-              Integer.parseInt(request.headers.get("Content-Length").getOrElse("0"))))
-          )
+          val destination = Destination.create(url, updatedFileName, fileContentType, seqId,
+            Integer.parseInt(request.headers.get("Content-Length").getOrElse("0")))
+          destination match {
+            case Some(d) => Ok(Json.toJson(d))
+            case _ => InternalServerError
+          }
         } else {
           // file streaming failed
           Ok(s"Streaming error occurred: ${result.left.get.errorMessage}")
